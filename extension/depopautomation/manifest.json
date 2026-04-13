@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Depop Auto-Engage Pro",
+  "version": "4.0",
+  "permissions": ["storage", "activeTab", "scripting", "tabs", "alarms"],
+  "host_permissions": [
+    "*://*.depop.com/*",
+    "https://your-railway-url.railway.app/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": { "default_popup": "popup.html" }
+}

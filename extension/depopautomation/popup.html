@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { width: 280px; padding: 15px; font-family: sans-serif; text-align: center; }
+    .container { border: 1px solid #eee; padding: 10px; border-radius: 8px; }
+    button { width: 100%; padding: 12px; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; margin-top: 8px; }
+    select, input, textarea { width: 100%; padding: 8px; margin: 8px 0; border-radius: 4px; border: 1px solid #ddd; box-sizing: border-box; font-family: sans-serif; }
+    textarea { resize: vertical; font-size: 11px; }
+    #start { background: #000; color: #fff; }
+    #stop { background: #ff4d4d; color: #fff; }
+    #status { font-size: 12px; color: #666; margin-top: 10px; font-weight: bold; }
+    .emblem { font-size: 24px; display: none; margin-top: 5px; }
+    label { font-size: 11px; font-weight: bold; display: block; text-align: left; color: #333; }
+    .section-title { font-size: 12px; color: #000; margin-bottom: 4px; font-weight: bold; display: block; text-align: left; }
+    hr { border: none; border-top: 1px solid #eee; margin: 10px 0; }
+    #queueProgress { font-size: 11px; color: #444; margin-top: 8px; text-align: left; padding: 6px; background: #f9f9f9; border-radius: 4px; display: none; }
+    #queueProgress .timer { font-size: 16px; font-weight: bold; color: #000; display: block; margin-top: 2px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h3>Human-AI Automator</h3>
+
+    <!-- STORE QUEUE -->
+    <hr>
+    <span class="section-title">Store Queue</span>
+
+    <label>Store URLs (one per line):</label>
+    <textarea id="storeQueue" rows="5" placeholder="https://www.depop.com/username1/&#10;https://www.depop.com/username2/&#10;https://www.depop.com/username3/"></textarea>
+
+    <label>Minutes per Store:</label>
+    <input type="number" id="sessionMinutes" value="10" min="1" max="60">
+
+    <!-- FILTERS -->
+    <hr>
+    <span class="section-title">Filters</span>
+
+    <label>Time Threshold:</label>
+    <select id="timeframe">
+      <option value="7">Last 7 Days</option>
+      <option value="14">Last 14 Days</option>
+      <option value="30">Last 1 Month</option>
+      <option value="999">All Time</option>
+    </select>
+
+    <label>Max Posts per Store:</label>
+    <input type="number" id="maxPosts" value="30" min="1">
+
+    <!-- HUMANIZE -->
+    <hr>
+    <span class="section-title">Humanize Settings</span>
+
+    <label>Speed Preset:</label>
+    <select id="speedPreset">
+      <option value="stealth">Stealth (Slowest)</option>
+      <option value="balanced" selected>Balanced</option>
+      <option value="fast">Fast</option>
+      <option value="custom">Custom</option>
+    </select>
+
+    <div id="customSettings" style="display:none;">
+      <label>Min Delay (seconds):</label>
+      <input type="number" id="minDelay" value="1.5" min="0.5" step="0.5">
+
+      <label>Max Delay (seconds):</label>
+      <input type="number" id="maxDelay" value="4" min="1" step="0.5">
+
+      <label>Extra Hesitation Chance (%):</label>
+      <input type="number" id="hesitationChance" value="30" min="0" max="100" step="5">
+
+      <label>Hesitation Duration (seconds):</label>
+      <input type="number" id="hesitationDuration" value="3" min="1" step="0.5">
+    </div>
+
+    <div id="eta" style="font-size:11px;color:#888;margin-top:6px;text-align:left;"></div>
+
+    <!-- CONTROLS -->
+    <button id="start">Start Automation</button>
+    <button id="stop">Stop</button>
+
+    <!-- PROGRESS -->
+    <div id="queueProgress">
+      <span id="storeLabel">Store 1/1</span>
+      <span class="timer" id="timerDisplay">--:--</span>
+    </div>
+
+    <div id="status">Status: Idle</div>
+    <div id="doneEmblem" class="emblem">&#9989; Task Complete</div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
