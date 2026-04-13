@@ -1,133 +1,150 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const fs = require('fs');
+const { Pool } = require('pg');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
-// ── Persistence: read/write state to disk ──
-const DATA_FILE = path.join(__dirname, 'data.json');
+// ── PostgreSQL connection ──
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+});
 
-function loadState() {
-  try {
-    if (fs.existsSync(DATA_FILE)) {
-      const raw = fs.readFileSync(DATA_FILE, 'utf8');
-      return JSON.parse(raw);
-    }
-  } catch(e) {
-    console.error('[Hivemind] Failed to load state:', e);
-  }
-  return null;
+// ── Create table if it doesn't exist ──
+async function initDB() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS hivemind_state (
+      key TEXT PRIMARY KEY,
+      value JSONB NOT NULL
+    )
+  `);
+  console.log('[Hivemind] DB ready');
 }
 
-function saveState() {
+async function dbGet(key) {
   try {
-    // Don't persist runtime-only fields
-    const toSave = {
-      pcs: state.pcs,
-      settings: state.settings,
-      dayFolders: state.dayFolders
-    };
-    fs.writeFileSync(DATA_FILE, JSON.stringify(toSave, null, 2));
+    const res = await pool.query('SELECT value FROM hivemind_state WHERE key = $1', [key]);
+    return res.rows.length ? res.rows[0].value : null;
   } catch(e) {
-    console.error('[Hivemind] Failed to save state:', e);
+    console.error('[DB] Get error:', e.message);
+    return null;
   }
 }
 
-// ── Default state ──
-const DEFAULT_STATE = {
-  pcs: {},
-  started: false,
-  startedAt: null,
-  status: {},
-  settings: {
-    sessionMinutes: 35,
-    maxDays: 7,
-    maxPosts: 30,
-    speedPreset: 'balanced',
-    minDelay: 1500,
-    maxDelay: 4000,
-    hesitationChance: 25,
-    hesitationDuration: 3000
-  },
-  dayFolders: {
-    monday: '',
-    tuesday: '',
-    wednesday: '',
-    thursday: '',
-    friday: ''
+async function dbSet(key, value) {
+  try {
+    await pool.query(`
+      INSERT INTO hivemind_state (key, value)
+      VALUES ($1, $2)
+      ON CONFLICT (key) DO UPDATE SET value = $2
+    `, [key, JSON.stringify(value)]);
+  } catch(e) {
+    console.error('[DB] Set error:', e.message);
   }
-};
+}
 
-// Load persisted state on startup
-const saved = loadState();
-let state = {
-  ...DEFAULT_STATE,
-  ...(saved || {}),
-  // Always reset runtime fields
+// ── Runtime state (not persisted — resets on deploy, which is fine) ──
+let runtime = {
   started: false,
   startedAt: null,
   status: {}
 };
 
-console.log('[Hivemind] State loaded. PCs:', Object.keys(state.pcs).length);
+const DEFAULT_SETTINGS = {
+  sessionMinutes: 35,
+  maxDays: 7,
+  maxPosts: 30,
+  speedPreset: 'balanced',
+  minDelay: 1500,
+  maxDelay: 4000,
+  hesitationChance: 25,
+  hesitationDuration: 3000
+};
+
+const DEFAULT_DAY_FOLDERS = {
+  monday: '', tuesday: '', wednesday: '', thursday: '', friday: ''
+};
+
+async function getFullState() {
+  const [pcs, settings, dayFolders] = await Promise.all([
+    dbGet('pcs'),
+    dbGet('settings'),
+    dbGet('dayFolders')
+  ]);
+  return {
+    pcs: pcs || {},
+    settings: settings || DEFAULT_SETTINGS,
+    dayFolders: dayFolders || DEFAULT_DAY_FOLDERS,
+    started: runtime.started,
+    startedAt: runtime.startedAt,
+    status: runtime.status
+  };
+}
 
 // ── Routes ──
+app.get('/api/state', async (req, res) => {
+  res.json(await getFullState());
+});
 
-app.get('/api/state', (req, res) => res.json(state));
-
-app.post('/api/pcs', (req, res) => {
+app.post('/api/pcs', async (req, res) => {
   const { pcs } = req.body;
   if (!pcs) return res.status(400).json({ error: 'missing pcs' });
-  state.pcs = pcs;
-  state.started = false;
-  state.startedAt = null;
-  state.status = {};
-  saveState();
+  await dbSet('pcs', pcs);
+  runtime.started = false;
+  runtime.startedAt = null;
+  runtime.status = {};
   res.json({ ok: true });
 });
 
-app.post('/api/settings', (req, res) => {
+app.post('/api/settings', async (req, res) => {
   const s = req.body;
   if (!s) return res.status(400).json({ error: 'missing settings' });
-  state.settings = { ...state.settings, ...s };
-  saveState();
+  const current = await dbGet('settings') || DEFAULT_SETTINGS;
+  await dbSet('settings', { ...current, ...s });
   res.json({ ok: true });
 });
 
-app.post('/api/dayfolders', (req, res) => {
+app.post('/api/dayfolders', async (req, res) => {
   const { dayFolders } = req.body;
   if (!dayFolders) return res.status(400).json({ error: 'missing dayFolders' });
-  state.dayFolders = { ...state.dayFolders, ...dayFolders };
-  saveState();
+  const current = await dbGet('dayFolders') || DEFAULT_DAY_FOLDERS;
+  await dbSet('dayFolders', { ...current, ...dayFolders });
   res.json({ ok: true });
 });
 
 app.post('/api/start', (req, res) => {
-  state.started = true;
-  state.startedAt = Date.now();
+  runtime.started = true;
+  runtime.startedAt = Date.now();
   res.json({ ok: true });
 });
 
 app.post('/api/stop', (req, res) => {
-  state.started = false;
+  runtime.started = false;
   res.json({ ok: true });
 });
 
-app.get('/api/queue/:pcId/:groupIndex', (req, res) => {
+app.get('/api/queue/:pcId/:groupIndex', async (req, res) => {
   const { pcId, groupIndex } = req.params;
-  const pc = state.pcs[pcId];
-  if (!pc) return res.json({ queue: [], started: false, settings: state.settings });
+  const [pcs, settings] = await Promise.all([dbGet('pcs'), dbGet('settings')]);
+  const pc = (pcs || {})[pcId];
+  if (!pc) return res.json({ queue: [], started: false, settings: settings || DEFAULT_SETTINGS });
   const group = pc.groups[parseInt(groupIndex)];
   const queue = group ? group.queue : [];
-  res.json({ queue, started: state.started, startedAt: state.startedAt, settings: state.settings });
+  res.json({
+    queue,
+    started: runtime.started,
+    startedAt: runtime.startedAt,
+    settings: settings || DEFAULT_SETTINGS
+  });
 });
 
-app.get('/api/pcs-list', (req, res) => {
-  const list = Object.entries(state.pcs).map(([id, pc]) => ({
+app.get('/api/pcs-list', async (req, res) => {
+  const pcs = await dbGet('pcs') || {};
+  const list = Object.entries(pcs).map(([id, pc]) => ({
     id, label: pc.label, groupCount: pc.groups.length
   }));
   res.json(list);
@@ -136,9 +153,14 @@ app.get('/api/pcs-list', (req, res) => {
 app.post('/api/status', (req, res) => {
   const { pcId, groupIndex, running, currentStore, listingsProcessed, storeIndex, totalStores } = req.body;
   const key = `${pcId}-g${groupIndex}`;
-  state.status[key] = { running, currentStore, listingsProcessed, storeIndex, totalStores, lastSeen: Date.now() };
+  runtime.status[key] = { running, currentStore, listingsProcessed, storeIndex, totalStores, lastSeen: Date.now() };
   res.json({ ok: true });
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`[Hivemind] Running on port ${PORT}`));
+initDB().then(() => {
+  app.listen(PORT, () => console.log(`[Hivemind] Running on port ${PORT}`));
+}).catch(err => {
+  console.error('[Hivemind] DB init failed:', err);
+  process.exit(1);
+});
