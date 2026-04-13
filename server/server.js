@@ -47,12 +47,95 @@ const DEFAULT_SETTINGS = {
 };
 
 const DEFAULT_DAY_FOLDERS = {
-  monday:    { g0: '', g1: '', g2: '' },
-  tuesday:   { g0: '', g1: '', g2: '' },
-  wednesday: { g0: '', g1: '', g2: '' },
-  thursday:  { g0: '', g1: '', g2: '' },
-  friday:    { g0: '', g1: '', g2: '' }
+  monday:    { g0:'', g1:'', g2:'' },
+  tuesday:   { g0:'', g1:'', g2:'' },
+  wednesday: { g0:'', g1:'', g2:'' },
+  thursday:  { g0:'', g1:'', g2:'' },
+  friday:    { g0:'', g1:'', g2:'' }
 };
+
+const DAY_NAMES = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+const GROUP_KEYS = ['g0','g1','g2'];
+
+// ── Get current day name in Mountain Time ──
+function getMountainDayName() {
+  const now = new Date();
+  // MST = UTC-7, MDT = UTC-6. Use fixed MST offset (UTC-7)
+  const mst = new Date(now.getTime() - (7 * 60 * 60 * 1000));
+  return DAY_NAMES[mst.getUTCDay()];
+}
+
+// ── Get current hour/minute in Mountain Time ──
+function getMountainTime() {
+  const now = new Date();
+  const mst = new Date(now.getTime() - (7 * 60 * 60 * 1000));
+  return { hour: mst.getUTCHours(), minute: mst.getUTCMinutes(), day: DAY_NAMES[mst.getUTCDay()] };
+}
+
+// ── Auto-assign today's folder links to PC groups ──
+async function autoAssignAndStart() {
+  const [pcs, dayFolders] = await Promise.all([dbGet('pcs'), dbGet('dayFolders')]);
+  if (!pcs || !dayFolders) {
+    console.log('[Scheduler] No PCs or folders configured, skipping.');
+    return;
+  }
+
+  const today = getMountainDayName();
+  const todayData = dayFolders[today];
+  if (!todayData) {
+    console.log(`[Scheduler] No folder data for ${today}, skipping.`);
+    return;
+  }
+
+  // Assign today's group links to each PC's groups
+  let assigned = false;
+  for (const [pcId, pc] of Object.entries(pcs)) {
+    pc.groups.forEach((group, gIdx) => {
+      const key = GROUP_KEYS[gIdx];
+      const links = todayData[key] || '';
+      if (links.trim()) {
+        group.queue = links.split('\n').map(s => s.trim()).filter(Boolean);
+        assigned = true;
+      }
+    });
+  }
+
+  if (!assigned) {
+    console.log(`[Scheduler] No links found for ${today}, skipping start.`);
+    return;
+  }
+
+  // Save updated PC config
+  await dbSet('pcs', pcs);
+
+  // Fire start signal
+  runtime.started = true;
+  runtime.startedAt = Date.now();
+  runtime.status = {};
+
+  console.log(`[Scheduler] Auto-started for ${today} at 7PM MST. PCs: ${Object.keys(pcs).length}`);
+}
+
+// ── Scheduler: check every minute if it's 7:00 PM MST ──
+let lastScheduledDay = null;
+
+function startScheduler() {
+  setInterval(async () => {
+    const { hour, minute, day } = getMountainTime();
+
+    // Fire at 19:00 MST (7PM), only once per day
+    if (hour === 19 && minute === 0 && day !== lastScheduledDay) {
+      // Only fire on weekdays
+      if (['monday','tuesday','wednesday','thursday','friday'].includes(day)) {
+        lastScheduledDay = day;
+        console.log(`[Scheduler] Triggering auto-start for ${day}`);
+        await autoAssignAndStart();
+      }
+    }
+  }, 60 * 1000); // check every minute
+
+  console.log('[Scheduler] Running. Will auto-start at 7:00 PM MST on weekdays.');
+}
 
 async function getFullState() {
   const [pcs, settings, dayFolders] = await Promise.all([
@@ -68,6 +151,7 @@ async function getFullState() {
   };
 }
 
+// ── Routes ──
 app.get('/api/state', async (req, res) => res.json(await getFullState()));
 
 app.post('/api/pcs', async (req, res) => {
@@ -105,6 +189,12 @@ app.post('/api/stop', (req, res) => {
   res.json({ ok: true });
 });
 
+// Manual trigger for testing
+app.post('/api/scheduler/trigger', async (req, res) => {
+  await autoAssignAndStart();
+  res.json({ ok: true, message: 'Scheduler triggered manually' });
+});
+
 app.get('/api/queue/:pcId/:groupIndex', async (req, res) => {
   const { pcId, groupIndex } = req.params;
   const [pcs, settings] = await Promise.all([dbGet('pcs'), dbGet('settings')]);
@@ -127,7 +217,14 @@ app.post('/api/status', (req, res) => {
   res.json({ ok: true });
 });
 
+// ── Time info endpoint for dashboard display ──
+app.get('/api/time', (req, res) => {
+  const t = getMountainTime();
+  res.json({ ...t, nextRun: '7:00 PM MST daily (Mon-Fri)' });
+});
+
 const PORT = process.env.PORT || 3000;
 initDB().then(() => {
+  startScheduler();
   app.listen(PORT, () => console.log(`[Hivemind] Running on port ${PORT}`));
 }).catch(err => { console.error('[Hivemind] DB init failed:', err); process.exit(1); });

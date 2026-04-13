@@ -80,7 +80,11 @@
   <div class="status-badge" id="statusBadge">● IDLE</div>
   <button class="btn btn-white" id="startBtn" disabled>▶ Start All</button>
   <button class="btn btn-red" id="stopBtn" disabled>■ Stop All</button>
-  <span style="font-size:11px;color:#333;margin-left:auto;" id="lastSaved"></span>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
+    <div style="font-size:11px;color:#444;" id="schedulerInfo">⏰ Auto-start: 7:00 PM MST daily</div>
+    <button class="btn btn-dark" style="padding:6px 12px;font-size:11px;" onclick="triggerNow()">▶ Test Run Now</button>
+    <span style="font-size:11px;color:#333;" id="lastSaved"></span>
+  </div>
 </div>
 <div class="main-layout">
   <div>
@@ -307,6 +311,16 @@
     if ((await res.json()).ok) {
       document.getElementById('settingsSaveNote').textContent = '✓ Saved';
       setTimeout(()=>document.getElementById('settingsSaveNote').textContent='', 2000);
+    }
+  }
+
+  async function triggerNow() {
+    if (!confirm('Trigger auto-start now? This will assign today\'s links and start all extensions.')) return;
+    const res = await fetch('/api/scheduler/trigger', { method: 'POST' });
+    const data = await res.json();
+    if (data.ok) {
+      isStarted = true; updateBadge();
+      alert('Scheduler triggered. Extensions will start within seconds.');
     }
   }
 
