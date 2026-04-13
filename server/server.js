@@ -8,18 +8,27 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
 // ── State ──
-// pcs = { pc1: { label: 'PC 1', groups: [ { queue: [...] }, ... ] }, ... }
 let state = {
   pcs: {},
   started: false,
   startedAt: null,
-  status: {}  // { 'pc1-g0': { running, lastSeen, currentStore } }
+  status: {},
+  settings: {
+    sessionMinutes: 35,
+    maxDays: 7,
+    maxPosts: 30,
+    speedPreset: 'balanced',
+    minDelay: 1500,
+    maxDelay: 4000,
+    hesitationChance: 25,
+    hesitationDuration: 3000
+  }
 };
 
-// ── GET /api/state ── dashboard polls this
+// ── GET /api/state ──
 app.get('/api/state', (req, res) => res.json(state));
 
-// ── POST /api/pcs ── save full PC config from dashboard
+// ── POST /api/pcs ──
 app.post('/api/pcs', (req, res) => {
   const { pcs } = req.body;
   if (!pcs) return res.status(400).json({ error: 'missing pcs' });
@@ -27,6 +36,15 @@ app.post('/api/pcs', (req, res) => {
   state.started = false;
   state.startedAt = null;
   state.status = {};
+  res.json({ ok: true });
+});
+
+// ── POST /api/settings ── dashboard saves global settings
+app.post('/api/settings', (req, res) => {
+  const s = req.body;
+  if (!s) return res.status(400).json({ error: 'missing settings' });
+  state.settings = { ...state.settings, ...s };
+  console.log('[Hivemind] Settings updated:', state.settings);
   res.json({ ok: true });
 });
 
@@ -43,27 +61,25 @@ app.post('/api/stop', (req, res) => {
   res.json({ ok: true });
 });
 
-// ── GET /api/queue/:pcId/:groupIndex ── extension polls this
+// ── GET /api/queue/:pcId/:groupIndex ── returns queue + settings
 app.get('/api/queue/:pcId/:groupIndex', (req, res) => {
   const { pcId, groupIndex } = req.params;
   const pc = state.pcs[pcId];
-  if (!pc) return res.json({ queue: [], started: false });
+  if (!pc) return res.json({ queue: [], started: false, settings: state.settings });
   const group = pc.groups[parseInt(groupIndex)];
   const queue = group ? group.queue : [];
-  res.json({ queue, started: state.started, startedAt: state.startedAt });
+  res.json({ queue, started: state.started, startedAt: state.startedAt, settings: state.settings });
 });
 
-// ── GET /api/pcs-list ── extension fetches available PCs for dropdowns
+// ── GET /api/pcs-list ──
 app.get('/api/pcs-list', (req, res) => {
   const list = Object.entries(state.pcs).map(([id, pc]) => ({
-    id,
-    label: pc.label,
-    groupCount: pc.groups.length
+    id, label: pc.label, groupCount: pc.groups.length
   }));
   res.json(list);
 });
 
-// ── POST /api/status ── extension reports status
+// ── POST /api/status ──
 app.post('/api/status', (req, res) => {
   const { pcId, groupIndex, running, currentStore } = req.body;
   const key = `${pcId}-g${groupIndex}`;
