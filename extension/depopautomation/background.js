@@ -149,9 +149,29 @@ async function startStore(tabId) {
   onUpdatedListener = function(updatedTabId, changeInfo) {
     if (updatedTabId === tabId && changeInfo.status === 'complete') {
       removeOnUpdatedListener();
-      setTimeout(() => {
-        chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] })
-          .catch(e => console.error('Inject error:', e));
+      setTimeout(async () => {
+        try {
+          // Force window focus and tab active so Depop renders properly
+          await chrome.windows.update(
+            (await chrome.tabs.get(tabId)).windowId,
+            { focused: true }
+          );
+          await chrome.tabs.update(tabId, { active: true });
+
+          // Wake up Depop renderer with a simulated interaction
+          await chrome.scripting.executeScript({
+            target: { tabId },
+            func: () => {
+              document.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 400, clientY: 300 }));
+              document.dispatchEvent(new Event('visibilitychange', { bubbles: true }));
+              window.dispatchEvent(new Event('focus'));
+            }
+          });
+
+          // Small extra pause after wake-up then inject
+          await new Promise(res => setTimeout(res, 1000));
+          await chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] });
+        } catch(e) { console.error('Inject error:', e); }
       }, 5000);
     }
   };
