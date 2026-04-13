@@ -22,12 +22,12 @@
     .btn-red { background: #cc2200; color: #fff; }
     .btn-dark { background: #1e1e1e; color: #ccc; border: 1px solid #2a2a2a; }
 
-    .layout { display: grid; grid-template-columns: 280px 1fr 220px; gap: 16px; align-items: start; }
+    .main-layout { display: grid; grid-template-columns: 280px 1fr 220px; gap: 16px; align-items: start; margin-bottom: 16px; }
 
     .card { background: #141414; border: 1px solid #1e1e1e; border-radius: 10px; padding: 18px; margin-bottom: 16px; }
     .card-title { font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
 
-    /* Settings panel */
+    /* Settings */
     .setting-row { margin-bottom: 12px; }
     .setting-label { font-size: 11px; color: #777; margin-bottom: 4px; display: block; }
     input[type=number], select {
@@ -36,7 +36,6 @@
     }
     input[type=number]:focus, select:focus { border-color: #3a3a3a; }
     select option { background: #1a1a1a; }
-
     .custom-delays { display: none; }
     .custom-delays.show { display: block; }
 
@@ -45,14 +44,12 @@
     .pc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
     .pc-name-input { background: transparent; border: none; color: #fff; font-size: 13px; font-weight: 700; outline: none; width: 120px; }
     .pc-name-input:focus { border-bottom: 1px solid #444; }
-    .btn-remove { background: none; border: none; color: #444; font-size: 16px; cursor: pointer; padding: 2px 6px; }
-    .btn-remove:hover { color: #cc2200; }
+    .btn-icon { background: none; border: none; color: #444; font-size: 15px; cursor: pointer; padding: 2px 6px; }
+    .btn-icon:hover { color: #cc2200; }
 
     .group-block { margin-bottom: 8px; }
     .group-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
     .group-label { font-size: 10px; color: #555; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
-    .btn-remove-group { background: none; border: none; color: #333; font-size: 12px; cursor: pointer; }
-    .btn-remove-group:hover { color: #cc2200; }
 
     textarea {
       width: 100%; background: #141414; border: 1px solid #222; color: #ccc;
@@ -67,7 +64,7 @@
     .btn-add-pc:hover { border-color: #444; color: #ccc; }
 
     /* Status grid */
-    .status-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+    .status-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
     .status-card { background: #0d0d0d; border: 1px solid #1a1a1a; border-radius: 7px; padding: 10px 12px; }
     .s-pc { font-size: 10px; color: #555; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
     .s-group { font-size: 12px; color: #ccc; margin: 3px 0; }
@@ -75,8 +72,26 @@
     .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #2a2a2a; margin-right: 5px; vertical-align: middle; }
     .dot.live { background: #22cc66; box-shadow: 0 0 5px #22cc6666; }
 
-    .save-note { font-size: 10px; color: #444; margin-top: 8px; text-align: center; }
+    /* Day folders */
+    .day-folders-layout { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+    .day-folder { background: #0d0d0d; border: 1px solid #1e1e1e; border-radius: 8px; overflow: hidden; }
+    .day-header {
+      padding: 10px 12px; font-size: 11px; font-weight: 700; color: #888;
+      text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between;
+      user-select: none;
+    }
+    .day-header:hover { color: #ccc; }
+    .day-header .arrow { font-size: 9px; color: #444; transition: transform 0.2s; }
+    .day-header.open .arrow { transform: rotate(90deg); }
+    .day-body { display: none; padding: 0 10px 10px; }
+    .day-body.open { display: block; }
+    .day-body textarea { min-height: 120px; font-size: 10px; }
+
+    .save-note { font-size: 10px; color: #444; margin-top: 6px; text-align: center; height: 14px; }
     hr { border: none; border-top: 1px solid #1e1e1e; margin: 14px 0; }
+
+    .today-tag { font-size: 9px; background: #1a3a1a; color: #22cc66; border-radius: 3px; padding: 1px 5px; margin-left: 6px; }
   </style>
 </head>
 <body>
@@ -91,7 +106,7 @@
   <span style="font-size:11px;color:#333;margin-left:auto;" id="lastSaved"></span>
 </div>
 
-<div class="layout">
+<div class="main-layout">
 
   <!-- LEFT: PC builder -->
   <div>
@@ -119,12 +134,10 @@
   <div>
     <div class="card">
       <div class="card-title">Global Settings</div>
-
       <div class="setting-row">
         <span class="setting-label">Minutes per Store</span>
         <input type="number" id="sessionMinutes" value="35" min="1" max="120">
       </div>
-
       <div class="setting-row">
         <span class="setting-label">Time Filter</span>
         <select id="maxDays">
@@ -134,12 +147,10 @@
           <option value="999">All Time</option>
         </select>
       </div>
-
       <div class="setting-row">
         <span class="setting-label">Max Posts per Store</span>
         <input type="number" id="maxPosts" value="30" min="1">
       </div>
-
       <div class="setting-row">
         <span class="setting-label">Speed Preset</span>
         <select id="speedPreset" onchange="toggleCustom()">
@@ -149,7 +160,6 @@
           <option value="custom">Custom</option>
         </select>
       </div>
-
       <div class="custom-delays" id="customDelays">
         <div class="setting-row">
           <span class="setting-label">Min Delay (sec)</span>
@@ -168,12 +178,21 @@
           <input type="number" id="hesitationDuration" value="3" min="1" step="0.5">
         </div>
       </div>
-
       <button class="btn btn-dark" style="width:100%;margin-top:4px;" onclick="saveSettings()">Save Settings</button>
       <div class="save-note" id="settingsSaveNote"></div>
     </div>
   </div>
 
+</div>
+
+<!-- Day Folders -->
+<div class="card">
+  <div class="card-title">📁 Store Link Folders</div>
+  <div class="day-folders-layout" id="dayFolders"></div>
+  <div style="margin-top:12px;display:flex;align-items:center;gap:10px;">
+    <button class="btn btn-dark" onclick="saveDayFolders()">Save Folders</button>
+    <div class="save-note" id="folderSaveNote" style="margin:0;"></div>
+  </div>
 </div>
 
 <script>
@@ -183,11 +202,71 @@
     fast:     { minDelay: 800,  maxDelay: 2000, hesitationChance: 10, hesitationDuration: 1500 }
   };
 
+  const DAYS = ['monday','tuesday','wednesday','thursday','friday'];
+  const DAY_LABELS = { monday:'Monday', tuesday:'Tuesday', wednesday:'Wednesday', thursday:'Thursday', friday:'Friday' };
+
   let pcs = {};
   let serverStatus = {};
   let isStarted = false;
   let pcCounter = 0;
+  let dayFolderData = { monday:'', tuesday:'', wednesday:'', thursday:'', friday:'' };
 
+  // ── Day Folders ──
+  function getTodayKey() {
+    const d = new Date().getDay();
+    return ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][d];
+  }
+
+  function renderDayFolders() {
+    const container = document.getElementById('dayFolders');
+    container.innerHTML = '';
+    const today = getTodayKey();
+
+    DAYS.forEach(day => {
+      const isToday = day === today;
+      const div = document.createElement('div');
+      div.className = 'day-folder';
+      div.innerHTML = `
+        <div class="day-header${isToday ? ' open' : ''}" onclick="toggleDay('${day}', this)">
+          <span>${DAY_LABELS[day]}${isToday ? '<span class="today-tag">today</span>' : ''}</span>
+          <span class="arrow">▶</span>
+        </div>
+        <div class="day-body${isToday ? ' open' : ''}" id="day-${day}">
+          <textarea placeholder="Paste store links here..."
+            onchange="dayFolderData['${day}'] = this.value"
+          >${dayFolderData[day] || ''}</textarea>
+        </div>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function toggleDay(day, headerEl) {
+    const body = document.getElementById(`day-${day}`);
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    headerEl.classList.toggle('open', !isOpen);
+  }
+
+  async function saveDayFolders() {
+    // Collect from textareas
+    DAYS.forEach(day => {
+      const ta = document.querySelector(`#day-${day} textarea`);
+      if (ta) dayFolderData[day] = ta.value;
+    });
+    const res = await fetch('/api/dayfolders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dayFolders: dayFolderData })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      document.getElementById('folderSaveNote').textContent = '✓ Saved';
+      setTimeout(() => document.getElementById('folderSaveNote').textContent = '', 2000);
+    }
+  }
+
+  // ── Settings ──
   function toggleCustom() {
     const isCustom = document.getElementById('speedPreset').value === 'custom';
     document.getElementById('customDelays').className = `custom-delays${isCustom ? ' show' : ''}`;
@@ -201,7 +280,6 @@
       hesitationChance: parseInt(document.getElementById('hesitationChance').value),
       hesitationDuration: parseFloat(document.getElementById('hesitationDuration').value) * 1000
     };
-
     const settings = {
       sessionMinutes: parseInt(document.getElementById('sessionMinutes').value),
       maxDays: parseInt(document.getElementById('maxDays').value),
@@ -209,10 +287,8 @@
       speedPreset: preset,
       ...presetVals
     };
-
     const res = await fetch('/api/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(settings)
     });
     const data = await res.json();
@@ -222,6 +298,7 @@
     }
   }
 
+  // ── PC Builder ──
   function addPC() {
     pcCounter++;
     const id = `pc${pcCounter}`;
@@ -242,13 +319,12 @@
       block.innerHTML = `
         <div class="pc-header">
           <input class="pc-name-input" value="${pc.label}" onchange="pcs['${pcId}'].label = this.value" />
-          <button class="btn-remove" onclick="removePC('${pcId}')">✕</button>
+          <button class="btn-icon" onclick="removePC('${pcId}')">✕</button>
         </div>
         <div id="groups-${pcId}"></div>
         <button class="btn-add-group" onclick="addGroup('${pcId}')">+ Add Group</button>
       `;
       container.appendChild(block);
-
       const groupsEl = document.getElementById(`groups-${pcId}`);
       pc.groups.forEach((group, gIdx) => {
         const gBlock = document.createElement('div');
@@ -256,7 +332,7 @@
         gBlock.innerHTML = `
           <div class="group-header">
             <span class="group-label">Group ${gIdx + 1}</span>
-            <button class="btn-remove-group" onclick="removeGroup('${pcId}', ${gIdx})">✕</button>
+            <button class="btn-icon" style="font-size:11px" onclick="removeGroup('${pcId}', ${gIdx})">✕</button>
           </div>
           <textarea placeholder="https://www.depop.com/store1/&#10;https://www.depop.com/store2/"
             onchange="updateQueue('${pcId}', ${gIdx}, this.value)"
@@ -282,8 +358,7 @@
       });
     }
     const res = await fetch('/api/pcs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pcs })
     });
     const data = await res.json();
@@ -291,11 +366,11 @@
       document.getElementById('startBtn').disabled = false;
       document.getElementById('pcSaveNote').textContent = '✓ Saved';
       setTimeout(() => document.getElementById('pcSaveNote').textContent = '', 2000);
-      const now = new Date();
-      document.getElementById('lastSaved').textContent = `Last saved ${now.toLocaleTimeString()}`;
+      document.getElementById('lastSaved').textContent = `Last saved ${new Date().toLocaleTimeString()}`;
     }
   }
 
+  // ── Start / Stop ──
   document.getElementById('startBtn').onclick = async () => {
     await fetch('/api/start', { method: 'POST' });
     isStarted = true; updateBadge();
@@ -341,7 +416,7 @@
     }
   }
 
-  function syncSettingsFromServer(settings) {
+  function syncSettingsUI(settings) {
     if (!settings) return;
     document.getElementById('sessionMinutes').value = settings.sessionMinutes || 35;
     document.getElementById('maxDays').value = settings.maxDays || 7;
@@ -356,6 +431,8 @@
     toggleCustom();
   }
 
+  let initialLoad = true;
+
   async function poll() {
     try {
       const res = await fetch('/api/state');
@@ -363,15 +440,24 @@
       isStarted = data.started;
       serverStatus = data.status || {};
 
-      if (!Object.keys(pcs).length && Object.keys(data.pcs || {}).length) {
-        pcs = data.pcs;
-        const nums = Object.keys(pcs).map(k => parseInt(k.replace('pc', ''))).filter(n => !isNaN(n));
-        pcCounter = nums.length ? Math.max(...nums) : 0;
-        renderPCList();
-        document.getElementById('startBtn').disabled = false;
+      // Sync PC config from server on first load
+      if (initialLoad) {
+        if (Object.keys(data.pcs || {}).length) {
+          pcs = data.pcs;
+          const nums = Object.keys(pcs).map(k => parseInt(k.replace('pc',''))).filter(n => !isNaN(n));
+          pcCounter = nums.length ? Math.max(...nums) : 0;
+          renderPCList();
+          document.getElementById('startBtn').disabled = false;
+        }
+        // Sync day folders
+        if (data.dayFolders) {
+          dayFolderData = { ...dayFolderData, ...data.dayFolders };
+        }
+        renderDayFolders();
+        syncSettingsUI(data.settings);
+        initialLoad = false;
       }
 
-      syncSettingsFromServer(data.settings);
       updateBadge();
       renderStatus();
     } catch(e) {}
