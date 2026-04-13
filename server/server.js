@@ -14,12 +14,7 @@ const pool = new Pool({
 });
 
 async function initDB() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS hivemind_state (
-      key TEXT PRIMARY KEY,
-      value JSONB NOT NULL
-    )
-  `);
+  await pool.query(`CREATE TABLE IF NOT EXISTS hivemind_state (key TEXT PRIMARY KEY, value JSONB NOT NULL)`);
   console.log('[Hivemind] DB ready');
 }
 
@@ -27,144 +22,96 @@ async function dbGet(key) {
   try {
     const res = await pool.query('SELECT value FROM hivemind_state WHERE key = $1', [key]);
     return res.rows.length ? res.rows[0].value : null;
-  } catch(e) { console.error('[DB] Get error:', e.message); return null; }
+  } catch(e) { console.error('[DB] Get:', e.message); return null; }
 }
 
 async function dbSet(key, value) {
   try {
-    await pool.query(`
-      INSERT INTO hivemind_state (key, value) VALUES ($1, $2)
-      ON CONFLICT (key) DO UPDATE SET value = $2
-    `, [key, JSON.stringify(value)]);
-  } catch(e) { console.error('[DB] Set error:', e.message); }
+    await pool.query(`INSERT INTO hivemind_state (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2`, [key, JSON.stringify(value)]);
+  } catch(e) { console.error('[DB] Set:', e.message); }
 }
 
-let runtime = { started: false, startedAt: null, status: {} };
+let runtime = { started: false, startedAt: null, status: {}, completions: {} };
 
-const DEFAULT_SETTINGS = {
-  sessionMinutes: 35, maxDays: 7, maxPosts: 30, speedPreset: 'balanced',
-  minDelay: 1500, maxDelay: 4000, hesitationChance: 25, hesitationDuration: 3000
-};
-
-const DEFAULT_DAY_FOLDERS = {
-  monday:    { g0:'', g1:'', g2:'' },
-  tuesday:   { g0:'', g1:'', g2:'' },
-  wednesday: { g0:'', g1:'', g2:'' },
-  thursday:  { g0:'', g1:'', g2:'' },
-  friday:    { g0:'', g1:'', g2:'' }
-};
-
+const DEFAULT_SETTINGS = { sessionMinutes: 35, maxDays: 7, maxPosts: 30, speedPreset: 'balanced', minDelay: 1500, maxDelay: 4000, hesitationChance: 25, hesitationDuration: 3000 };
+const DEFAULT_DAY_FOLDERS = { monday:{g0:'',g1:'',g2:''}, tuesday:{g0:'',g1:'',g2:''}, wednesday:{g0:'',g1:'',g2:''}, thursday:{g0:'',g1:'',g2:''}, friday:{g0:'',g1:'',g2:''} };
 const DAY_NAMES = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
 const GROUP_KEYS = ['g0','g1','g2'];
 
-// ── Get current day name in Mountain Time ──
-function getMountainDayName() {
-  const now = new Date();
-  // MST = UTC-7, MDT = UTC-6. Use fixed MST offset (UTC-7)
-  const mst = new Date(now.getTime() - (7 * 60 * 60 * 1000));
-  return DAY_NAMES[mst.getUTCDay()];
-}
-
-// ── Get current hour/minute in Mountain Time ──
 function getMountainTime() {
-  const now = new Date();
-  const mst = new Date(now.getTime() - (7 * 60 * 60 * 1000));
+  const mst = new Date(Date.now() - 7 * 60 * 60 * 1000);
   return { hour: mst.getUTCHours(), minute: mst.getUTCMinutes(), day: DAY_NAMES[mst.getUTCDay()] };
 }
 
-// ── Auto-assign today's folder links to PC groups ──
 async function autoAssignAndStart() {
   const [pcs, dayFolders] = await Promise.all([dbGet('pcs'), dbGet('dayFolders')]);
-  if (!pcs || !dayFolders) {
-    console.log('[Scheduler] No PCs or folders configured, skipping.');
-    return;
-  }
-
-  const today = getMountainDayName();
+  if (!pcs || !dayFolders) return;
+  const today = getMountainTime().day;
   const todayData = dayFolders[today];
-  if (!todayData) {
-    console.log(`[Scheduler] No folder data for ${today}, skipping.`);
-    return;
-  }
-
-  // Assign today's group links to each PC's groups
+  if (!todayData) return;
   let assigned = false;
   for (const [pcId, pc] of Object.entries(pcs)) {
     pc.groups.forEach((group, gIdx) => {
-      const key = GROUP_KEYS[gIdx];
-      const links = todayData[key] || '';
-      if (links.trim()) {
-        group.queue = links.split('\n').map(s => s.trim()).filter(Boolean);
-        assigned = true;
-      }
+      const links = todayData[GROUP_KEYS[gIdx]] || '';
+      if (links.trim()) { group.queue = links.split('\n').map(s=>s.trim()).filter(Boolean); assigned = true; }
     });
   }
-
-  if (!assigned) {
-    console.log(`[Scheduler] No links found for ${today}, skipping start.`);
-    return;
-  }
-
-  // Save updated PC config
+  if (!assigned) return;
   await dbSet('pcs', pcs);
-
-  // Fire start signal
   runtime.started = true;
   runtime.startedAt = Date.now();
   runtime.status = {};
-
-  console.log(`[Scheduler] Auto-started for ${today} at 7PM MST. PCs: ${Object.keys(pcs).length}`);
+  runtime.completions = {};
+  console.log(`[Scheduler] Auto-started for ${today}`);
 }
 
-// ── Scheduler: check every minute if it's 7:00 PM MST ──
-let lastScheduledDay = null;
+// ── Auto-stop: check if all connected extensions have completed ──
+function checkAutoStop() {
+  if (!runtime.started) return;
+  const now = Date.now();
+  const recentStatuses = Object.values(runtime.status).filter(s => now - s.lastSeen < 300000); // seen in last 5 min
+  if (!recentStatuses.length) return;
+  const allDone = recentStatuses.every(s => !s.running);
+  if (allDone) {
+    runtime.started = false;
+    console.log('[Hivemind] All extensions completed — auto-stopped');
+  }
+}
 
+// Check auto-stop every 30 seconds
+setInterval(checkAutoStop, 30000);
+
+let lastScheduledDay = null;
 function startScheduler() {
   setInterval(async () => {
     const { hour, minute, day } = getMountainTime();
-
-    // Fire at 19:00 MST (7PM), only once per day
     if (hour === 19 && minute === 0 && day !== lastScheduledDay) {
-      // Only fire on weekdays
       if (['monday','tuesday','wednesday','thursday','friday'].includes(day)) {
         lastScheduledDay = day;
-        console.log(`[Scheduler] Triggering auto-start for ${day}`);
         await autoAssignAndStart();
       }
     }
-  }, 60 * 1000); // check every minute
-
-  console.log('[Scheduler] Running. Will auto-start at 7:00 PM MST on weekdays.');
+  }, 60000);
+  console.log('[Scheduler] Running — auto-start 7PM MST weekdays');
 }
 
 async function getFullState() {
-  const [pcs, settings, dayFolders] = await Promise.all([
-    dbGet('pcs'), dbGet('settings'), dbGet('dayFolders')
-  ]);
-  return {
-    pcs: pcs || {},
-    settings: settings || DEFAULT_SETTINGS,
-    dayFolders: dayFolders || DEFAULT_DAY_FOLDERS,
-    started: runtime.started,
-    startedAt: runtime.startedAt,
-    status: runtime.status
-  };
+  const [pcs, settings, dayFolders] = await Promise.all([dbGet('pcs'), dbGet('settings'), dbGet('dayFolders')]);
+  return { pcs: pcs||{}, settings: settings||DEFAULT_SETTINGS, dayFolders: dayFolders||DEFAULT_DAY_FOLDERS, started: runtime.started, startedAt: runtime.startedAt, status: runtime.status };
 }
 
-// ── Routes ──
 app.get('/api/state', async (req, res) => res.json(await getFullState()));
 
 app.post('/api/pcs', async (req, res) => {
   const { pcs } = req.body;
   if (!pcs) return res.status(400).json({ error: 'missing pcs' });
   await dbSet('pcs', pcs);
-  runtime.status = {};
+  runtime.status = {}; runtime.completions = {};
   res.json({ ok: true });
 });
 
 app.post('/api/settings', async (req, res) => {
   const s = req.body;
-  if (!s) return res.status(400).json({ error: 'missing settings' });
   const current = await dbGet('settings') || DEFAULT_SETTINGS;
   await dbSet('settings', { ...current, ...s });
   res.json({ ok: true });
@@ -172,15 +119,14 @@ app.post('/api/settings', async (req, res) => {
 
 app.post('/api/dayfolders', async (req, res) => {
   const { dayFolders } = req.body;
-  if (!dayFolders) return res.status(400).json({ error: 'missing dayFolders' });
   const current = await dbGet('dayFolders') || DEFAULT_DAY_FOLDERS;
   await dbSet('dayFolders', { ...current, ...dayFolders });
   res.json({ ok: true });
 });
 
 app.post('/api/start', (req, res) => {
-  runtime.started = true;
-  runtime.startedAt = Date.now();
+  runtime.started = true; runtime.startedAt = Date.now();
+  runtime.completions = {};
   res.json({ ok: true });
 });
 
@@ -189,25 +135,32 @@ app.post('/api/stop', (req, res) => {
   res.json({ ok: true });
 });
 
-// Manual trigger for testing
+app.post('/api/complete', (req, res) => {
+  const { pcId, groupIndex } = req.body;
+  const key = `${pcId}-g${groupIndex}`;
+  runtime.completions[key] = Date.now();
+  if (runtime.status[key]) runtime.status[key].running = false;
+  checkAutoStop();
+  res.json({ ok: true });
+});
+
 app.post('/api/scheduler/trigger', async (req, res) => {
   await autoAssignAndStart();
-  res.json({ ok: true, message: 'Scheduler triggered manually' });
+  res.json({ ok: true });
 });
 
 app.get('/api/queue/:pcId/:groupIndex', async (req, res) => {
   const { pcId, groupIndex } = req.params;
   const [pcs, settings] = await Promise.all([dbGet('pcs'), dbGet('settings')]);
-  const pc = (pcs || {})[pcId];
-  if (!pc) return res.json({ queue: [], started: runtime.started, settings: settings || DEFAULT_SETTINGS });
+  const pc = (pcs||{})[pcId];
+  if (!pc) return res.json({ queue: [], started: runtime.started, settings: settings||DEFAULT_SETTINGS });
   const group = pc.groups[parseInt(groupIndex)];
-  const queue = group ? group.queue : [];
-  res.json({ queue, started: runtime.started, startedAt: runtime.startedAt, settings: settings || DEFAULT_SETTINGS });
+  res.json({ queue: group?group.queue:[], started: runtime.started, startedAt: runtime.startedAt, settings: settings||DEFAULT_SETTINGS });
 });
 
 app.get('/api/pcs-list', async (req, res) => {
   const pcs = await dbGet('pcs') || {};
-  res.json(Object.entries(pcs).map(([id, pc]) => ({ id, label: pc.label, groupCount: pc.groups.length })));
+  res.json(Object.entries(pcs).map(([id,pc]) => ({ id, label: pc.label, groupCount: pc.groups.length })));
 });
 
 app.post('/api/status', (req, res) => {
@@ -217,14 +170,8 @@ app.post('/api/status', (req, res) => {
   res.json({ ok: true });
 });
 
-// ── Time info endpoint for dashboard display ──
-app.get('/api/time', (req, res) => {
-  const t = getMountainTime();
-  res.json({ ...t, nextRun: '7:00 PM MST daily (Mon-Fri)' });
-});
+app.get('/api/time', (req, res) => res.json({ ...getMountainTime(), nextRun: '7:00 PM MST (Mon-Fri)' }));
 
 const PORT = process.env.PORT || 3000;
-initDB().then(() => {
-  startScheduler();
-  app.listen(PORT, () => console.log(`[Hivemind] Running on port ${PORT}`));
-}).catch(err => { console.error('[Hivemind] DB init failed:', err); process.exit(1); });
+initDB().then(() => { startScheduler(); app.listen(PORT, () => console.log(`[Hivemind] Port ${PORT}`)); })
+  .catch(err => { console.error('[Hivemind] DB failed:', err); process.exit(1); });

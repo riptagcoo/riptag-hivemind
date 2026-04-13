@@ -3,62 +3,56 @@
 <head>
   <meta charset="UTF-8">
   <style>
-    body { width: 260px; padding: 14px; font-family: sans-serif; background: #0a0a0a; color: #f0f0f0; margin: 0; }
-    h3 { font-size: 13px; font-weight: 700; letter-spacing: 1px; margin-bottom: 12px; color: #fff; }
-    .section { background: #141414; border: 1px solid #1e1e1e; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { width: 240px; padding: 14px; font-family: 'Segoe UI', sans-serif; background: #0a0a0a; color: #f0f0f0; }
+    h3 { font-size: 12px; font-weight: 700; letter-spacing: 1px; margin-bottom: 12px; color: #fff; }
+    .section { background: #141414; border: 1px solid #1e1e1e; border-radius: 8px; padding: 12px; margin-bottom: 8px; }
     .section-title { font-size: 9px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
     label { font-size: 10px; color: #777; display: block; margin-bottom: 3px; }
     select { width: 100%; background: #0d0d0d; border: 1px solid #222; color: #f0f0f0; border-radius: 5px; padding: 6px 8px; font-size: 11px; outline: none; margin-bottom: 8px; }
     select option { background: #1a1a1a; }
-    button { width: 100%; padding: 10px; border: none; border-radius: 5px; font-size: 12px; font-weight: 700; cursor: pointer; margin-top: 4px; }
+    .btn { width: 100%; padding: 9px; border: none; border-radius: 5px; font-size: 11px; font-weight: 700; cursor: pointer; }
     #saveSetup { background: #fff; color: #000; }
-    #localStop { background: #cc2200; color: #fff; }
-    .hm-status { display: flex; align-items: center; gap: 7px; padding: 8px 10px; border-radius: 6px; background: #0d0d0d; border: 1px solid #1a1a1a; margin-bottom: 8px; }
+    #localStop { background: #cc2200; color: #fff; margin-top: 8px; display: none; }
+    .hm-row { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border-radius: 6px; background: #0d0d0d; border: 1px solid #1a1a1a; margin-bottom: 7px; }
     .dot { width: 8px; height: 8px; border-radius: 50%; background: #2a2a2a; flex-shrink: 0; }
     .dot.synced { background: #2255cc; box-shadow: 0 0 5px #2255cc66; }
     .dot.running { background: #22cc66; box-shadow: 0 0 6px #22cc6666; }
     .dot.offline { background: #cc4400; }
     .hm-label { font-size: 11px; color: #888; }
-    .hm-label strong { color: #ccc; }
-    .info-row { font-size: 10px; color: #555; margin-top: 4px; }
+    .hm-label b { color: #ccc; }
+    .info-row { font-size: 10px; color: #555; margin-bottom: 3px; }
     .info-row span { color: #888; }
-    .store-display { font-size: 11px; color: #333; background: #0d0d0d; border: 1px solid #1a1a1a; border-radius: 5px; padding: 7px 9px; margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .store-display.active { color: #ccc; }
-    .timer-display { font-size: 20px; font-weight: 700; color: #fff; text-align: center; margin: 10px 0 2px; }
-    .store-progress { font-size: 10px; color: #555; text-align: center; margin-bottom: 6px; }
-    hr { border: none; border-top: 1px solid #1e1e1e; margin: 10px 0; }
-    .reset-link { text-align: center; margin-top: 8px; }
-    .reset-link a { font-size: 9px; color: #333; text-decoration: none; }
-    .reset-link a:hover { color: #666; }
+    .timer { font-size: 22px; font-weight: 700; text-align: center; margin: 8px 0 2px; }
+    .store-prog { font-size: 10px; color: #555; text-align: center; margin-bottom: 5px; }
+    .store-name { font-size: 11px; padding: 6px 8px; background: #0d0d0d; border: 1px solid #1a1a1a; border-radius: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #333; }
+    .store-name.active { color: #ccc; }
+    .reset-link { text-align: center; margin-top: 6px; }
+    .reset-link a { font-size: 9px; color: #2a2a2a; text-decoration: none; }
+    .reset-link a:hover { color: #555; }
   </style>
 </head>
 <body>
   <h3>⬡ HIVEMIND</h3>
 
-  <!-- ONE-TIME SETUP -->
   <div class="section" id="setupSection">
     <div class="section-title">One-Time Setup</div>
     <label>PC</label>
     <select id="pcSelect"><option value="">Loading...</option></select>
     <label>Group</label>
     <select id="groupSelect"><option value="">—</option></select>
-    <button id="saveSetup">Save & Connect</button>
+    <button class="btn" id="saveSetup">Save & Connect</button>
   </div>
 
-  <!-- STATUS (shown after setup) -->
   <div class="section" id="statusSection" style="display:none;">
     <div class="section-title">Status</div>
-    <div class="hm-status">
-      <div class="dot" id="connDot"></div>
-      <span class="hm-label" id="connLabel">Connecting...</span>
-    </div>
-    <div class="info-row">Identity: <span id="identityLabel">—</span></div>
+    <div class="hm-row"><div class="dot" id="connDot"></div><span class="hm-label" id="connLabel">Syncing...</span></div>
+    <div class="info-row">ID: <span id="identityLabel">—</span></div>
     <div class="info-row">Queue: <span id="queueCount">—</span> stores</div>
-    <hr>
-    <div class="timer-display" id="timerDisplay" style="display:none;"></div>
-    <div class="store-progress" id="storeProgress"></div>
-    <div class="store-display" id="storeDisplay">Not running</div>
-    <button id="localStop" style="margin-top:10px;display:none;">■ Stop Locally</button>
+    <div class="timer" id="timerDisplay" style="display:none;"></div>
+    <div class="store-prog" id="storeProgress"></div>
+    <div class="store-name" id="storeDisplay">Not running</div>
+    <button class="btn" id="localStop">■ Stop Locally</button>
   </div>
 
   <div class="reset-link"><a href="#" id="resetLink">Change PC / Group</a></div>
