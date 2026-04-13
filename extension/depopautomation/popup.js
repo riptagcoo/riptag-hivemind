@@ -150,6 +150,7 @@ document.getElementById('connectBtn').onclick = async () => {
     // Load queue
     if (data.queue && data.queue.length > 0) {
       document.getElementById('storeQueue').value = data.queue.join('\n');
+      lastQueueHash = hashQueue(data.queue);
     }
 
     // Apply global settings from server
@@ -168,26 +169,63 @@ async function reportStatus(running, currentStore) {
   const saved = await chrome.storage.local.get(['hivemindPC', 'hivemindGroup']);
   if (!saved.hivemindPC) return;
   try {
+    const local = await chrome.storage.local.get(['currentIndex', 'currentStoreIndex', 'storeQueue']);
+    const listingsProcessed = local.currentIndex || 0;
+    const storeIndex = local.currentStoreIndex || 0;
+    const totalStores = (local.storeQueue || []).length;
     await fetch(`${HIVEMIND_URL}/api/status`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pcId: saved.hivemindPC, groupIndex: saved.hivemindGroup || 0, running, currentStore })
+      body: JSON.stringify({
+        pcId: saved.hivemindPC,
+        groupIndex: saved.hivemindGroup || 0,
+        running,
+        currentStore,
+        listingsProcessed,
+        storeIndex,
+        totalStores
+      })
     });
   } catch(e) {}
 }
 
-// ── Poll for remote start ──
+// ── Heartbeat: report status every 5s while running ──
+setInterval(async () => {
+  const local = await chrome.storage.local.get(['running', 'storeQueue', 'currentStoreIndex']);
+  if (!local.running) return;
+  const queue = local.storeQueue || [];
+  const idx = local.currentStoreIndex || 0;
+  reportStatus(true, queue[idx] || null);
+}, 5000);
+
+// ── Poll for remote start + auto-sync queue ──
 let remoteStartFired = false;
+let lastQueueHash = '';
+
+function hashQueue(queue) {
+  return queue.join('|');
+}
 
 async function pollForStart() {
-  const saved = await chrome.storage.local.get(['hivemindPC', 'hivemindGroup']);
+  const saved = await chrome.storage.local.get(['hivemindPC', 'hivemindGroup', 'running']);
   if (!saved.hivemindPC) return;
   try {
     const res = await fetch(`${HIVEMIND_URL}/api/queue/${saved.hivemindPC}/${saved.hivemindGroup || 0}`);
     const data = await res.json();
+
+    // ── Auto-sync queue if it changed and not currently running ──
+    if (data.queue && data.queue.length > 0) {
+      const newHash = hashQueue(data.queue);
+      if (newHash !== lastQueueHash && !saved.running) {
+        lastQueueHash = newHash;
+        document.getElementById('storeQueue').value = data.queue.join('\n');
+        applySettings(data.settings);
+      }
+    }
+
+    // ── Remote start ──
     if (data.started && !remoteStartFired) {
-      const local = await chrome.storage.local.get(['running']);
-      if (!local.running) {
+      if (!saved.running) {
         remoteStartFired = true;
         document.getElementById('start').click();
       }

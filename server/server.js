@@ -134,9 +134,9 @@ app.get('/api/pcs-list', (req, res) => {
 });
 
 app.post('/api/status', (req, res) => {
-  const { pcId, groupIndex, running, currentStore } = req.body;
+  const { pcId, groupIndex, running, currentStore, listingsProcessed, storeIndex, totalStores } = req.body;
   const key = `${pcId}-g${groupIndex}`;
-  state.status[key] = { running, currentStore, lastSeen: Date.now() };
+  state.status[key] = { running, currentStore, listingsProcessed, storeIndex, totalStores, lastSeen: Date.now() };
   res.json({ ok: true });
 });
 

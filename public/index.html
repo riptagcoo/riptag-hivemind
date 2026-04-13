@@ -63,14 +63,32 @@
     .btn-add-pc { background: #141414; color: #888; border: 1px dashed #2a2a2a; width: 100%; padding: 10px; margin-top: 4px; border-radius: 8px; font-size: 12px; cursor: pointer; }
     .btn-add-pc:hover { border-color: #444; color: #ccc; }
 
-    /* Status grid */
-    .status-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
-    .status-card { background: #0d0d0d; border: 1px solid #1a1a1a; border-radius: 7px; padding: 10px 12px; }
-    .s-pc { font-size: 10px; color: #555; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
-    .s-group { font-size: 12px; color: #ccc; margin: 3px 0; }
-    .s-store { font-size: 10px; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #2a2a2a; margin-right: 5px; vertical-align: middle; }
+    /* Status - grouped by PC */
+    .pc-status-block { background: #0d0d0d; border: 1px solid #1e1e1e; border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+    .pc-status-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .pc-status-name { font-size: 13px; font-weight: 700; color: #fff; }
+    .pc-online-count { font-size: 10px; color: #555; }
+
+    .group-status-row {
+      display: grid;
+      grid-template-columns: 80px 1fr 90px 80px;
+      gap: 8px;
+      align-items: center;
+      padding: 7px 10px;
+      background: #141414;
+      border: 1px solid #1a1a1a;
+      border-radius: 6px;
+      margin-bottom: 5px;
+    }
+    .gs-label { font-size: 11px; font-weight: 700; color: #666; }
+    .gs-store { font-size: 11px; color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gs-store.idle { color: #333; }
+    .gs-listings { font-size: 11px; color: #888; text-align: right; }
+    .gs-conn { display: flex; align-items: center; gap: 5px; font-size: 10px; color: #555; justify-content: flex-end; }
+    .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #2a2a2a; flex-shrink: 0; }
     .dot.live { background: #22cc66; box-shadow: 0 0 5px #22cc6666; }
+    .dot.connected { background: #2255cc; box-shadow: 0 0 5px #2255cc66; }
+    .dot.offline { background: #333; }
 
     /* Day folders */
     .day-folders-layout { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
@@ -124,7 +142,7 @@
   <div>
     <div class="card">
       <div class="card-title">Live Status</div>
-      <div class="status-grid" id="statusGrid">
+      <div id="statusGrid">
         <div style="color:#333;font-size:12px;">No extensions connected yet.</div>
       </div>
     </div>
@@ -396,23 +414,72 @@
 
   function renderStatus() {
     const grid = document.getElementById('statusGrid');
-    const entries = Object.entries(serverStatus);
-    if (!entries.length) {
+
+    if (!Object.keys(serverStatus).length && !Object.keys(pcs).length) {
       grid.innerHTML = '<div style="color:#333;font-size:12px;">No extensions connected yet.</div>';
       return;
     }
+
     grid.innerHTML = '';
-    for (const [key, st] of entries) {
-      const isLive = st.running && (Date.now() - st.lastSeen < 12000);
-      const card = document.createElement('div');
-      card.className = 'status-card';
-      card.innerHTML = `
-        <div class="s-pc">${key}</div>
-        <div class="s-group"><span class="dot ${isLive ? 'live' : ''}"></span>${isLive ? 'Running' : 'Idle'}</div>
-        <div class="s-store">${st.currentStore ? st.currentStore.replace('https://www.depop.com/', '') : '—'}</div>
-        <div style="font-size:9px;color:#333;margin-top:3px;">${timeSince(st.lastSeen)}</div>
+
+    // Group status by PC
+    for (const [pcId, pc] of Object.entries(pcs)) {
+      const block = document.createElement('div');
+      block.className = 'pc-status-block';
+
+      const liveCount = pc.groups.filter((_, gIdx) => {
+        const st = serverStatus[`${pcId}-g${gIdx}`];
+        return st && st.running && (Date.now() - st.lastSeen < 12000);
+      }).length;
+
+      const connectedCount = pc.groups.filter((_, gIdx) => {
+        const st = serverStatus[`${pcId}-g${gIdx}`];
+        return st && (Date.now() - st.lastSeen < 20000);
+      }).length;
+
+      block.innerHTML = `
+        <div class="pc-status-header">
+          <span class="pc-status-name">${pc.label}</span>
+          <span class="pc-online-count">${connectedCount}/${pc.groups.length} connected · ${liveCount} running</span>
+        </div>
+        <div class="group-rows-${pcId}"></div>
       `;
-      grid.appendChild(card);
+      grid.appendChild(block);
+
+      const rowsEl = block.querySelector(`.group-rows-${pcId}`);
+
+      pc.groups.forEach((group, gIdx) => {
+        const key = `${pcId}-g${gIdx}`;
+        const st = serverStatus[key];
+        const isLive = st && st.running && (Date.now() - st.lastSeen < 12000);
+        const isConnected = st && (Date.now() - st.lastSeen < 20000);
+
+        let storeDisplay = '—';
+        let storeProgress = '';
+        if (st && st.currentStore) {
+          try {
+            storeDisplay = new URL(st.currentStore).pathname.replace(/\/$/, '').split('/').pop();
+          } catch { storeDisplay = st.currentStore; }
+        }
+        if (st && st.totalStores > 0) {
+          storeProgress = ` (${(st.storeIndex || 0) + 1}/${st.totalStores})`;
+        }
+
+        const listings = st ? (st.listingsProcessed || 0) : 0;
+
+        const connDot = isLive ? 'live' : isConnected ? 'connected' : 'offline';
+        const connLabel = isLive ? 'Running' : isConnected ? 'Idle' : 'Offline';
+
+        const row = document.createElement('div');
+        row.className = 'group-status-row';
+        row.innerHTML = `
+          <div class="gs-label">Group ${gIdx + 1}</div>
+          <div class="gs-store ${isLive ? '' : 'idle'}">${isLive ? storeDisplay + storeProgress : '—'}</div>
+          <div class="gs-listings">${isLive ? `${listings} listings` : ''}</div>
+          <div class="gs-conn"><span class="dot ${connDot}"></span>${connLabel}</div>
+        `;
+        rowsEl.appendChild(row);
+      });
     }
   }
 
