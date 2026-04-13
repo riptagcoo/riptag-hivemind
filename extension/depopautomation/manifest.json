@@ -5,7 +5,7 @@
   "permissions": ["storage", "activeTab", "scripting", "tabs", "alarms"],
   "host_permissions": [
     "*://*.depop.com/*",
-    "https://your-railway-url.railway.app/*"
+    "https://riptag-hivemind-production.up.railway.app/*"
   ],
   "background": {
     "service_worker": "background.js"

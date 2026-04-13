@@ -1,6 +1,6 @@
 // ── HIVEMIND CONFIG (set once per account) ──
 // Change these two values when loading the extension on each Chrome profile
-const HIVEMIND_URL = 'https://your-railway-url.railway.app'; // ← update after deploying
+const HIVEMIND_URL = 'https://riptag-hivemind-production.up.railway.app'; // ← update after deploying
 const PC_ID        = 'pc1';   // ← pc1, pc2, pc3, pc4, pc5, pc6
 const GROUP_INDEX  = '0';     // ← 0, 1, or 2 (which group of 3 accounts this is)
 
