@@ -14,11 +14,6 @@ function removeOnUpdatedListener() {
   }
 }
 
-// Gentle cleanup — discard tab memory only, no navigation
-function cleanupTabMemory(tabId) {
-  setTimeout(() => chrome.tabs.discard(tabId).catch(() => {}), 3000);
-}
-
 async function reportStatus(running, currentStore) {
   const saved = await chrome.storage.local.get(['hivemindPC','hivemindGroup','hivemindAccount','currentIndex','currentStoreIndex','storeQueue','sessionEndTime']);
   if (!saved.hivemindPC) return;
@@ -157,7 +152,7 @@ async function startStore(tabId) {
       setTimeout(() => {
         chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] })
           .catch(e => console.error('Inject error:', e));
-      }, 2000);
+      }, 5000);
     }
   };
   chrome.tabs.onUpdated.addListener(onUpdatedListener);
@@ -170,7 +165,6 @@ async function switchToNextStore() {
   const nextIdx = (data.currentStoreIndex || 0) + 1;
   await chrome.storage.local.set({ currentStoreIndex: nextIdx });
   if (activeTabId) {
-    cleanupTabMemory(activeTabId);
     await startStore(activeTabId);
   }
 }
