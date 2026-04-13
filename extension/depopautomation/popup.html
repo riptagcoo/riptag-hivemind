@@ -17,11 +17,30 @@
     hr { border: none; border-top: 1px solid #eee; margin: 10px 0; }
     #queueProgress { font-size: 11px; color: #444; margin-top: 8px; text-align: left; padding: 6px; background: #f9f9f9; border-radius: 4px; display: none; }
     #queueProgress .timer { font-size: 16px; font-weight: bold; color: #000; display: block; margin-top: 2px; }
+
+    /* Hivemind connect bar */
+    #hivemindBar { background: #f5f5f5; border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; text-align: left; }
+    #hivemindBar .hm-title { font-size: 10px; font-weight: bold; color: #999; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    #hivemindBar select { margin: 3px 0; padding: 5px; font-size: 11px; }
+    #connectBtn { background: #000; color: #fff; padding: 7px; font-size: 11px; margin-top: 4px; border-radius: 4px; }
+    #hmStatus { font-size: 10px; color: #999; margin-top: 4px; }
+    #hmStatus.connected { color: #22aa55; font-weight: bold; }
   </style>
 </head>
 <body>
   <div class="container">
     <h3>Human-AI Automator</h3>
+
+    <!-- HIVEMIND CONNECT -->
+    <div id="hivemindBar">
+      <div class="hm-title">⬡ Hivemind</div>
+      <label>PC</label>
+      <select id="pcSelect"><option value="">Loading...</option></select>
+      <label>Group</label>
+      <select id="groupSelect"><option value="">—</option></select>
+      <button id="connectBtn">Connect & Load Queue</button>
+      <div id="hmStatus">Not connected</div>
+    </div>
 
     <!-- STORE QUEUE -->
     <hr>

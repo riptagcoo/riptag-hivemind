@@ -6,272 +6,285 @@
   <title>Riptag Hivemind</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #0a0a0a; color: #f0f0f0; font-family: 'Segoe UI', sans-serif; min-height: 100vh; padding: 32px; }
+    body { background: #0a0a0a; color: #f0f0f0; font-family: 'Segoe UI', sans-serif; min-height: 100vh; padding: 28px; }
 
-    h1 { font-size: 22px; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
-    .subtitle { font-size: 12px; color: #555; margin-bottom: 32px; }
+    h1 { font-size: 20px; font-weight: 700; letter-spacing: 1px; margin-bottom: 2px; }
+    .sub { font-size: 11px; color: #444; margin-bottom: 24px; }
 
-    .grid { display: grid; grid-template-columns: 340px 1fr; gap: 24px; align-items: start; }
-
-    .card { background: #141414; border: 1px solid #222; border-radius: 10px; padding: 20px; }
-    .card h2 { font-size: 13px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
-
-    textarea {
-      width: 100%; height: 180px; background: #0a0a0a; border: 1px solid #2a2a2a;
-      color: #f0f0f0; border-radius: 6px; padding: 10px; font-size: 12px;
-      font-family: monospace; resize: vertical; outline: none;
+    .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .status-badge {
+      padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+      background: #1a1a1a; color: #444; border: 1px solid #222;
     }
-    textarea:focus { border-color: #444; }
+    .status-badge.on { background: #0d2b1a; color: #22cc66; border-color: #1a4a2a; }
 
     .btn {
-      display: block; width: 100%; padding: 12px; border: none; border-radius: 6px;
-      font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity 0.15s; margin-top: 10px;
+      padding: 9px 20px; border: none; border-radius: 6px;
+      font-size: 12px; font-weight: 700; cursor: pointer; transition: opacity 0.15s;
     }
-    .btn:hover { opacity: 0.85; }
-    .btn-save { background: #222; color: #fff; }
-    .btn-start { background: #fff; color: #000; }
-    .btn-stop { background: #cc2200; color: #fff; }
-    .btn:disabled { opacity: 0.3; cursor: default; }
+    .btn:hover { opacity: 0.8; }
+    .btn:disabled { opacity: 0.25; cursor: default; }
+    .btn-white { background: #fff; color: #000; }
+    .btn-red { background: #cc2200; color: #fff; }
+    .btn-dark { background: #1e1e1e; color: #ccc; border: 1px solid #2a2a2a; }
+    .btn-add { background: #141414; color: #888; border: 1px dashed #2a2a2a; width: 100%; padding: 10px; margin-top: 12px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+    .btn-add:hover { border-color: #444; color: #ccc; }
 
-    .store-count { font-size: 11px; color: #555; margin-top: 8px; }
+    .layout { display: flex; gap: 20px; align-items: flex-start; }
+    .left { width: 260px; flex-shrink: 0; }
+    .right { flex: 1; }
 
-    /* PC Grid */
-    .pc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .card { background: #141414; border: 1px solid #1e1e1e; border-radius: 10px; padding: 18px; margin-bottom: 16px; }
+    .card-title { font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
 
-    .pc-card {
-      background: #0a0a0a; border: 1px solid #1e1e1e; border-radius: 8px; padding: 14px;
+    /* PC cards */
+    .pc-block { background: #0d0d0d; border: 1px solid #1e1e1e; border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+    .pc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .pc-name-input {
+      background: transparent; border: none; color: #fff; font-size: 13px; font-weight: 700;
+      outline: none; width: 120px;
     }
-    .pc-label { font-size: 11px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+    .pc-name-input:focus { border-bottom: 1px solid #444; }
+    .btn-remove { background: none; border: none; color: #444; font-size: 16px; cursor: pointer; padding: 2px 6px; }
+    .btn-remove:hover { color: #cc2200; }
 
-    .group {
-      background: #141414; border: 1px solid #1e1e1e; border-radius: 6px;
-      padding: 8px 10px; margin-bottom: 6px;
-    }
-    .group-label { font-size: 10px; color: #555; margin-bottom: 4px; }
-    .group-stores { font-size: 11px; color: #ccc; font-family: monospace; line-height: 1.6; }
-    .group-stores .store-item { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .group-stores .store-item:first-child { color: #fff; font-weight: 600; }
-
-    .status-dot {
-      display: inline-block; width: 7px; height: 7px; border-radius: 50%;
-      background: #333; margin-right: 6px; vertical-align: middle;
-    }
-    .status-dot.running { background: #22cc66; box-shadow: 0 0 6px #22cc6688; }
-    .status-dot.idle { background: #333; }
-
+    .group-block { margin-bottom: 8px; }
     .group-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-    .last-seen { font-size: 9px; color: #444; }
+    .group-label { font-size: 10px; color: #555; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+    .btn-remove-group { background: none; border: none; color: #333; font-size: 12px; cursor: pointer; }
+    .btn-remove-group:hover { color: #cc2200; }
 
-    .global-status {
-      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
-      background: #141414; border: 1px solid #222; border-radius: 8px; margin-bottom: 20px;
+    textarea {
+      width: 100%; background: #141414; border: 1px solid #222; color: #ccc;
+      border-radius: 5px; padding: 8px; font-size: 11px; font-family: monospace;
+      resize: vertical; outline: none; min-height: 70px;
     }
-    .global-status .label { font-size: 12px; color: #666; }
-    .global-status .value { font-size: 13px; font-weight: 700; }
-    .value.on { color: #22cc66; }
-    .value.off { color: #555; }
+    textarea:focus { border-color: #3a3a3a; }
 
-    .controls { display: flex; gap: 8px; margin-top: 10px; }
-    .controls .btn { margin-top: 0; flex: 1; }
+    .btn-add-group { background: none; border: 1px dashed #1e1e1e; color: #444; border-radius: 5px; width: 100%; padding: 6px; font-size: 11px; cursor: pointer; margin-top: 4px; }
+    .btn-add-group:hover { border-color: #333; color: #777; }
 
-    hr { border: none; border-top: 1px solid #1e1e1e; margin: 14px 0; }
+    /* Status grid */
+    .status-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+    .status-card { background: #0d0d0d; border: 1px solid #1a1a1a; border-radius: 7px; padding: 10px 12px; }
+    .s-pc { font-size: 10px; color: #555; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+    .s-group { font-size: 12px; color: #ccc; margin: 3px 0; }
+    .s-store { font-size: 10px; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #2a2a2a; margin-right: 5px; vertical-align: middle; }
+    .dot.live { background: #22cc66; box-shadow: 0 0 5px #22cc6666; }
+
+    .save-bar { display: flex; gap: 8px; margin-top: 4px; }
+    .save-bar .btn { flex: 1; }
   </style>
 </head>
 <body>
 
-  <h1>⬡ RIPTAG HIVEMIND</h1>
-  <p class="subtitle">Depop Auto-Engage Coordinator</p>
+<h1>⬡ RIPTAG HIVEMIND</h1>
+<p class="sub">Depop Auto-Engage Coordinator</p>
 
-  <div class="global-status">
-    <span class="label">Status:</span>
-    <span class="value off" id="globalStatus">IDLE</span>
-    <span class="label" style="margin-left:auto;">Stores loaded:</span>
-    <span class="value" id="globalStoreCount">0</span>
-  </div>
+<div class="top-bar">
+  <div class="status-badge" id="statusBadge">● IDLE</div>
+  <button class="btn btn-white" id="startBtn" disabled>▶ Start All</button>
+  <button class="btn btn-red" id="stopBtn" disabled>■ Stop All</button>
+  <span style="font-size:11px;color:#333;margin-left:auto;" id="lastSaved"></span>
+</div>
 
-  <div class="grid">
+<div class="layout">
 
-    <!-- LEFT: Store input + controls -->
-    <div>
-      <div class="card">
-        <h2>Today's Store Queue</h2>
-        <textarea id="storeInput" placeholder="https://www.depop.com/store1/&#10;https://www.depop.com/store2/&#10;https://www.depop.com/store3/"></textarea>
-        <div class="store-count" id="storeCount">0 stores</div>
-        <button class="btn btn-save" id="saveBtn">Save Queue</button>
-        <hr>
-        <div class="controls">
-          <button class="btn btn-start" id="startBtn" disabled>▶ Start All</button>
-          <button class="btn btn-stop" id="stopBtn" disabled>■ Stop All</button>
-        </div>
+  <!-- LEFT: PC builder -->
+  <div class="left">
+    <div class="card">
+      <div class="card-title">PC Setup</div>
+      <div id="pcList"></div>
+      <button class="btn-add" onclick="addPC()">+ Add PC</button>
+      <div class="save-bar" style="margin-top:12px;">
+        <button class="btn btn-dark" style="width:100%" onclick="saveConfig()">Save Config</button>
       </div>
     </div>
-
-    <!-- RIGHT: PC status grid -->
-    <div>
-      <div class="card">
-        <h2>PC Overview</h2>
-        <div class="pc-grid" id="pcGrid">
-          <!-- Generated by JS -->
-        </div>
-      </div>
-    </div>
-
   </div>
 
-  <script>
-    const SERVER = ''; // Same origin — no URL needed
+  <!-- RIGHT: Status -->
+  <div class="right">
+    <div class="card">
+      <div class="card-title">Live Status</div>
+      <div class="status-grid" id="statusGrid">
+        <div style="color:#333;font-size:12px;">No PCs configured yet.</div>
+      </div>
+    </div>
+  </div>
 
-    const PC_CONFIG = {
-      pc1: { label: 'PC 1', groups: 3 },
-      pc2: { label: 'PC 2', groups: 3 },
-      pc3: { label: 'PC 3', groups: 2 },
-      pc4: { label: 'PC 4', groups: 2 },
-      pc5: { label: 'PC 5', groups: 3 },
-      pc6: { label: 'PC 6', groups: 3 }
-    };
+</div>
 
-    let currentStores = [];
-    let currentStatus = {};
-    let isStarted = false;
+<script>
+  const RAILWAY = '';  // same origin
 
-    // ── Count stores as user types ──
-    document.getElementById('storeInput').addEventListener('input', () => {
-      const lines = getStores();
-      document.getElementById('storeCount').textContent = `${lines.length} store${lines.length !== 1 ? 's' : ''}`;
-    });
+  // ── Local PC config (built in UI) ──
+  let pcs = {};  // { pc1: { label, groups: [ { queue: [] } ] } }
+  let serverStatus = {};
+  let isStarted = false;
+  let pcCounter = 0;
 
-    function getStores() {
-      return document.getElementById('storeInput').value
-        .split('\n').map(s => s.trim()).filter(s => s.length > 0);
-    }
+  function addPC() {
+    pcCounter++;
+    const id = `pc${pcCounter}`;
+    pcs[id] = { label: `PC ${pcCounter}`, groups: [{ queue: [] }] };
+    renderPCList();
+  }
 
-    function buildQueue(stores, groupIndex) {
-      if (!stores.length) return [];
-      const offset = groupIndex % stores.length;
-      return [...stores.slice(offset), ...stores.slice(0, offset)];
-    }
+  function removePC(id) {
+    delete pcs[id];
+    renderPCList();
+  }
 
-    function shortenUrl(url) {
-      try { return new URL(url).pathname.replace(/\/$/, '').split('/').pop(); }
-      catch { return url; }
-    }
+  function addGroup(pcId) {
+    pcs[pcId].groups.push({ queue: [] });
+    renderPCList();
+  }
 
-    function timeSince(ms) {
-      const s = Math.floor((Date.now() - ms) / 1000);
-      if (s < 60) return `${s}s ago`;
-      return `${Math.floor(s / 60)}m ago`;
-    }
+  function removeGroup(pcId, gIdx) {
+    pcs[pcId].groups.splice(gIdx, 1);
+    renderPCList();
+  }
 
-    // ── Render PC grid ──
-    function renderGrid(stores, status) {
-      const grid = document.getElementById('pcGrid');
-      grid.innerHTML = '';
+  function renderPCList() {
+    const container = document.getElementById('pcList');
+    container.innerHTML = '';
 
-      for (const [pcId, cfg] of Object.entries(PC_CONFIG)) {
-        const pcCard = document.createElement('div');
-        pcCard.className = 'pc-card';
-        pcCard.innerHTML = `<div class="pc-label">${cfg.label}</div>`;
+    for (const [pcId, pc] of Object.entries(pcs)) {
+      const block = document.createElement('div');
+      block.className = 'pc-block';
 
-        for (let g = 0; g < cfg.groups; g++) {
-          const key = `${pcId}-g${g}`;
-          const st = status[key];
-          const isRunning = st && st.running && (Date.now() - st.lastSeen < 15000);
-          const queue = buildQueue(stores, g);
+      block.innerHTML = `
+        <div class="pc-header">
+          <input class="pc-name-input" value="${pc.label}" onchange="pcs['${pcId}'].label = this.value" />
+          <button class="btn-remove" onclick="removePC('${pcId}')">✕</button>
+        </div>
+        <div id="groups-${pcId}"></div>
+        <button class="btn-add-group" onclick="addGroup('${pcId}')">+ Add Group</button>
+      `;
+      container.appendChild(block);
 
-          const groupEl = document.createElement('div');
-          groupEl.className = 'group';
-
-          const storeItems = queue.slice(0, 3).map((url, i) =>
-            `<span class="store-item">${i === 0 ? '▶ ' : ''}${shortenUrl(url)}</span>`
-          ).join('');
-
-          groupEl.innerHTML = `
-            <div class="group-header">
-              <div class="group-label">
-                <span class="status-dot ${isRunning ? 'running' : 'idle'}"></span>
-                Group ${g + 1}
-              </div>
-              <div class="last-seen">${st ? timeSince(st.lastSeen) : ''}</div>
-            </div>
-            <div class="group-stores">
-              ${stores.length ? storeItems || '<span style="color:#444">No stores</span>' : '<span style="color:#444">—</span>'}
-            </div>
-          `;
-          pcCard.appendChild(groupEl);
-        }
-
-        grid.appendChild(pcCard);
-      }
-    }
-
-    // ── Save queue ──
-    document.getElementById('saveBtn').onclick = async () => {
-      const stores = getStores();
-      const res = await fetch('/api/stores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stores })
+      const groupsEl = document.getElementById(`groups-${pcId}`);
+      pc.groups.forEach((group, gIdx) => {
+        const gBlock = document.createElement('div');
+        gBlock.className = 'group-block';
+        gBlock.innerHTML = `
+          <div class="group-header">
+            <span class="group-label">Group ${gIdx + 1}</span>
+            <button class="btn-remove-group" onclick="removeGroup('${pcId}', ${gIdx})">✕</button>
+          </div>
+          <textarea placeholder="https://www.depop.com/store1/&#10;https://www.depop.com/store2/"
+            onchange="updateQueue('${pcId}', ${gIdx}, this.value)"
+          >${group.queue.join('\n')}</textarea>
+        `;
+        groupsEl.appendChild(gBlock);
       });
-      const data = await res.json();
-      if (data.ok) {
-        currentStores = stores;
-        document.getElementById('startBtn').disabled = stores.length === 0;
-        renderGrid(currentStores, currentStatus);
-        document.getElementById('saveBtn').textContent = '✓ Saved';
-        setTimeout(() => document.getElementById('saveBtn').textContent = 'Save Queue', 2000);
-      }
-    };
-
-    // ── Start all ──
-    document.getElementById('startBtn').onclick = async () => {
-      const res = await fetch('/api/start', { method: 'POST' });
-      const data = await res.json();
-      if (data.ok) {
-        isStarted = true;
-        updateGlobalStatus();
-        document.getElementById('stopBtn').disabled = false;
-      }
-    };
-
-    // ── Stop all ──
-    document.getElementById('stopBtn').onclick = async () => {
-      await fetch('/api/stop', { method: 'POST' });
-      isStarted = false;
-      updateGlobalStatus();
-    };
-
-    function updateGlobalStatus() {
-      const el = document.getElementById('globalStatus');
-      el.textContent = isStarted ? 'RUNNING' : 'IDLE';
-      el.className = `value ${isStarted ? 'on' : 'off'}`;
     }
+  }
 
-    // ── Poll server state every 4 seconds ──
-    async function poll() {
-      try {
-        const res = await fetch('/api/state');
-        const data = await res.json();
-        currentStores = data.stores;
-        currentStatus = data.status;
-        isStarted = data.started;
+  function updateQueue(pcId, gIdx, value) {
+    pcs[pcId].groups[gIdx].queue = value.split('\n').map(s => s.trim()).filter(Boolean);
+  }
 
-        document.getElementById('globalStoreCount').textContent = currentStores.length;
-        document.getElementById('storeCount').textContent = `${currentStores.length} store${currentStores.length !== 1 ? 's' : ''}`;
-        if (currentStores.length && !document.getElementById('storeInput').value.trim()) {
-          document.getElementById('storeInput').value = currentStores.join('\n');
+  async function saveConfig() {
+    // Collect all textarea values before saving
+    for (const [pcId, pc] of Object.entries(pcs)) {
+      pc.groups.forEach((group, gIdx) => {
+        const textareas = document.querySelectorAll(`#groups-${pcId} .group-block`);
+        if (textareas[gIdx]) {
+          const ta = textareas[gIdx].querySelector('textarea');
+          if (ta) group.queue = ta.value.split('\n').map(s => s.trim()).filter(Boolean);
         }
-
-        updateGlobalStatus();
-        document.getElementById('startBtn').disabled = currentStores.length === 0 || isStarted;
-        document.getElementById('stopBtn').disabled = !isStarted;
-        renderGrid(currentStores, currentStatus);
-      } catch (e) {
-        console.error('Poll error:', e);
-      }
+      });
     }
 
-    poll();
-    setInterval(poll, 4000);
-  </script>
+    const res = await fetch('/api/pcs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pcs })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      const now = new Date();
+      document.getElementById('lastSaved').textContent = `Saved ${now.toLocaleTimeString()}`;
+      document.getElementById('startBtn').disabled = false;
+    }
+  }
+
+  document.getElementById('startBtn').onclick = async () => {
+    await fetch('/api/start', { method: 'POST' });
+    isStarted = true;
+    updateBadge();
+  };
+
+  document.getElementById('stopBtn').onclick = async () => {
+    await fetch('/api/stop', { method: 'POST' });
+    isStarted = false;
+    updateBadge();
+  };
+
+  function updateBadge() {
+    const badge = document.getElementById('statusBadge');
+    badge.textContent = isStarted ? '● RUNNING' : '● IDLE';
+    badge.className = `status-badge${isStarted ? ' on' : ''}`;
+    document.getElementById('startBtn').disabled = isStarted;
+    document.getElementById('stopBtn').disabled = !isStarted;
+  }
+
+  function timeSince(ms) {
+    const s = Math.floor((Date.now() - ms) / 1000);
+    if (s < 60) return `${s}s ago`;
+    return `${Math.floor(s / 60)}m ago`;
+  }
+
+  function renderStatus() {
+    const grid = document.getElementById('statusGrid');
+    const entries = Object.entries(serverStatus);
+
+    if (!entries.length) {
+      grid.innerHTML = '<div style="color:#333;font-size:12px;">No extensions connected yet.</div>';
+      return;
+    }
+
+    grid.innerHTML = '';
+    for (const [key, st] of entries) {
+      const isLive = st.running && (Date.now() - st.lastSeen < 12000);
+      const card = document.createElement('div');
+      card.className = 'status-card';
+      card.innerHTML = `
+        <div class="s-pc">${key}</div>
+        <div class="s-group"><span class="dot ${isLive ? 'live' : ''}"></span>${isLive ? 'Running' : 'Idle'}</div>
+        <div class="s-store">${st.currentStore ? st.currentStore.replace('https://www.depop.com/', '') : '—'}</div>
+        <div style="font-size:9px;color:#333;margin-top:3px;">${timeSince(st.lastSeen)}</div>
+      `;
+      grid.appendChild(card);
+    }
+  }
+
+  async function poll() {
+    try {
+      const res = await fetch('/api/state');
+      const data = await res.json();
+      isStarted = data.started;
+      serverStatus = data.status || {};
+
+      // Sync PC config from server if local is empty
+      if (!Object.keys(pcs).length && Object.keys(data.pcs || {}).length) {
+        pcs = data.pcs;
+        // find highest pc number
+        const nums = Object.keys(pcs).map(k => parseInt(k.replace('pc', ''))).filter(n => !isNaN(n));
+        pcCounter = nums.length ? Math.max(...nums) : 0;
+        renderPCList();
+        document.getElementById('startBtn').disabled = false;
+      }
+
+      updateBadge();
+      renderStatus();
+    } catch(e) {}
+  }
+
+  poll();
+  setInterval(poll, 4000);
+</script>
 </body>
 </html>

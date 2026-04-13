@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Depop Auto-Engage Pro",
-  "version": "4.0",
+  "version": "4.2",
   "permissions": ["storage", "activeTab", "scripting", "tabs", "alarms"],
   "host_permissions": [
     "*://*.depop.com/*",

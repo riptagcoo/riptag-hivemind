@@ -1,8 +1,5 @@
-// ── HIVEMIND CONFIG (set once per account) ──
-// Change these two values when loading the extension on each Chrome profile
-const HIVEMIND_URL = 'https://riptag-hivemind-production.up.railway.app'; // ← update after deploying
-const PC_ID        = 'pc1';   // ← pc1, pc2, pc3, pc4, pc5, pc6
-const GROUP_INDEX  = '0';     // ← 0, 1, or 2 (which group of 3 accounts this is)
+// ── HIVEMIND SERVER URL — only thing hardcoded ──
+const HIVEMIND_URL = 'https://riptag-hivemind-production.up.railway.app';
 
 // ── Speed preset definitions (UNCHANGED) ──
 const PRESETS = {
@@ -53,20 +50,13 @@ updateETA();
 let timerInterval = null;
 
 function startTimerPolling() {
-  const progressEl = document.getElementById('queueProgress');
-  progressEl.style.display = 'block';
-
+  document.getElementById('queueProgress').style.display = 'block';
   timerInterval = setInterval(async () => {
     const data = await chrome.storage.local.get(['running', 'sessionEndTime', 'currentStoreIndex', 'storeQueue']);
-    if (!data.running) {
-      stopTimerPolling();
-      return;
-    }
-
+    if (!data.running) { stopTimerPolling(); return; }
     const queue = data.storeQueue || [];
     const idx = data.currentStoreIndex || 0;
     document.getElementById('storeLabel').innerText = `Store ${idx + 1}/${queue.length}`;
-
     if (data.sessionEndTime) {
       const remaining = Math.max(0, data.sessionEndTime - Date.now());
       const mins = Math.floor(remaining / 60000);
@@ -81,64 +71,122 @@ function stopTimerPolling() {
   timerInterval = null;
 }
 
-// ── HIVEMIND: Fetch queue from server and pre-fill ──
-async function fetchHivemindQueue() {
+// ── HIVEMIND: Load PC list into dropdown ──
+async function loadPCList() {
   try {
-    const res = await fetch(`${HIVEMIND_URL}/api/queue/${PC_ID}/${GROUP_INDEX}`);
-    const data = await res.json();
-    if (data.queue && data.queue.length > 0) {
-      document.getElementById('storeQueue').value = data.queue.join('\n');
-      document.getElementById('status').innerText = `Status: Queue loaded (${data.queue.length} stores)`;
+    const res = await fetch(`${HIVEMIND_URL}/api/pcs-list`);
+    const list = await res.json();
+    const pcSelect = document.getElementById('pcSelect');
+    pcSelect.innerHTML = '<option value="">Select PC...</option>';
+    list.forEach(pc => {
+      const opt = document.createElement('option');
+      opt.value = pc.id;
+      opt.textContent = pc.label;
+      opt.dataset.groups = pc.groupCount;
+      pcSelect.appendChild(opt);
+    });
+
+    // Restore saved selection
+    const saved = await chrome.storage.local.get(['hivemindPC', 'hivemindGroup']);
+    if (saved.hivemindPC) {
+      pcSelect.value = saved.hivemindPC;
+      updateGroupDropdown(saved.hivemindPC, parseInt(saved.hivemindGroup || 0));
     }
-    return data;
-  } catch (e) {
-    console.warn('[Hivemind] Could not reach server:', e);
-    return null;
+  } catch(e) {
+    document.getElementById('hmStatus').textContent = 'Cannot reach Hivemind server';
   }
 }
 
-// ── HIVEMIND: Report status back to server ──
+function updateGroupDropdown(pcId, selectedGroup) {
+  const pcSelect = document.getElementById('pcSelect');
+  const opt = Array.from(pcSelect.options).find(o => o.value === pcId);
+  const groupCount = opt ? parseInt(opt.dataset.groups || 1) : 1;
+  const groupSelect = document.getElementById('groupSelect');
+  groupSelect.innerHTML = '';
+  for (let i = 0; i < groupCount; i++) {
+    const o = document.createElement('option');
+    o.value = i;
+    o.textContent = `Group ${i + 1}`;
+    groupSelect.appendChild(o);
+  }
+  if (selectedGroup !== undefined) groupSelect.value = selectedGroup;
+}
+
+document.getElementById('pcSelect').onchange = function() {
+  updateGroupDropdown(this.value);
+};
+
+// ── HIVEMIND: Connect button — fetch queue + save selection ──
+document.getElementById('connectBtn').onclick = async () => {
+  const pcId = document.getElementById('pcSelect').value;
+  const groupIndex = document.getElementById('groupSelect').value;
+  if (!pcId) { document.getElementById('hmStatus').textContent = 'Select a PC first'; return; }
+
+  document.getElementById('hmStatus').textContent = 'Connecting...';
+  document.getElementById('hmStatus').className = '';
+
+  try {
+    const res = await fetch(`${HIVEMIND_URL}/api/queue/${pcId}/${groupIndex}`);
+    const data = await res.json();
+
+    if (data.queue && data.queue.length > 0) {
+      document.getElementById('storeQueue').value = data.queue.join('\n');
+    }
+
+    // Save selection for next popup open
+    await chrome.storage.local.set({ hivemindPC: pcId, hivemindGroup: groupIndex });
+
+    document.getElementById('hmStatus').textContent = `✓ Connected — ${data.queue.length} stores loaded`;
+    document.getElementById('hmStatus').className = 'connected';
+  } catch(e) {
+    document.getElementById('hmStatus').textContent = 'Failed to connect';
+  }
+};
+
+// ── HIVEMIND: Report status back ──
 async function reportStatus(running, currentStore) {
+  const saved = await chrome.storage.local.get(['hivemindPC', 'hivemindGroup']);
+  if (!saved.hivemindPC) return;
   try {
     await fetch(`${HIVEMIND_URL}/api/status`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pcId: PC_ID, groupIndex: GROUP_INDEX, running, currentStore })
+      body: JSON.stringify({
+        pcId: saved.hivemindPC,
+        groupIndex: saved.hivemindGroup || 0,
+        running,
+        currentStore
+      })
     });
-  } catch (e) { /* silent */ }
+  } catch(e) {}
 }
 
-// ── HIVEMIND: Poll for remote start signal ──
-let hivemindPollInterval = null;
+// ── HIVEMIND: Poll for remote start ──
 let remoteStartFired = false;
+let hivemindPollInterval = null;
 
 async function pollForStart() {
+  const saved = await chrome.storage.local.get(['hivemindPC', 'hivemindGroup']);
+  if (!saved.hivemindPC) return;
   try {
-    const res = await fetch(`${HIVEMIND_URL}/api/queue/${PC_ID}/${GROUP_INDEX}`);
+    const res = await fetch(`${HIVEMIND_URL}/api/queue/${saved.hivemindPC}/${saved.hivemindGroup || 0}`);
     const data = await res.json();
-
-    // If server says started and we haven't fired yet, trigger start
     if (data.started && !remoteStartFired) {
-      const localData = await chrome.storage.local.get(['running']);
-      if (!localData.running) {
+      const local = await chrome.storage.local.get(['running']);
+      if (!local.running) {
         remoteStartFired = true;
         document.getElementById('start').click();
       }
     }
-
-    // Reset flag if server is stopped
-    if (!data.started) {
-      remoteStartFired = false;
-    }
-  } catch (e) { /* silent */ }
+    if (!data.started) remoteStartFired = false;
+  } catch(e) {}
 }
 
-// ── START BUTTON (UNCHANGED logic, added status reporting) ──
+// ── START BUTTON (UNCHANGED logic) ──
 document.getElementById('start').onclick = async () => {
   const days = document.getElementById('timeframe').value;
   const limit = document.getElementById('maxPosts').value;
   const sessionMinutes = parseInt(document.getElementById('sessionMinutes').value) || 10;
-
   const rawQueue = document.getElementById('storeQueue').value;
   const storeQueue = rawQueue.split('\n').map(u => u.trim()).filter(u => u.length > 0);
 
@@ -153,17 +201,11 @@ document.getElementById('start').onclick = async () => {
   const h = getHumanizeValues();
 
   await chrome.storage.local.set({
-    running: true,
-    currentIndex: 0,
-    currentStoreIndex: 0,
-    storeQueue,
-    sessionMinutes,
-    maxDays: parseInt(days),
-    maxPosts: parseInt(limit),
-    minDelay: h.minDelay,
-    maxDelay: h.maxDelay,
-    hesitationChance: h.hesitationChance,
-    hesitationDuration: h.hesitationDuration
+    running: true, currentIndex: 0, currentStoreIndex: 0,
+    storeQueue, sessionMinutes,
+    maxDays: parseInt(days), maxPosts: parseInt(limit),
+    minDelay: h.minDelay, maxDelay: h.maxDelay,
+    hesitationChance: h.hesitationChance, hesitationDuration: h.hesitationDuration
   });
 
   chrome.runtime.sendMessage({ action: "START_QUEUE" });
@@ -171,7 +213,7 @@ document.getElementById('start').onclick = async () => {
   reportStatus(true, storeQueue[0]);
 };
 
-// ── STOP BUTTON (UNCHANGED logic, added status reporting) ──
+// ── STOP BUTTON (UNCHANGED logic) ──
 document.getElementById('stop').onclick = () => {
   chrome.storage.local.set({ running: false }, () => {
     document.getElementById('status').innerText = "Status: Stopped.";
@@ -200,19 +242,16 @@ chrome.runtime.onMessage.addListener((msg) => {
   }
 });
 
-// ── Init: load queue from hivemind + restore state ──
+// ── Init ──
 (async () => {
-  // Pull queue from hivemind
-  const hivemindData = await fetchHivemindQueue();
+  await loadPCList();
 
-  // Restore running state
-  const localData = await chrome.storage.local.get(['running']);
-  if (localData.running) {
+  const data = await chrome.storage.local.get(['running']);
+  if (data.running) {
     document.getElementById('status').innerText = "Status: Running...";
     startTimerPolling();
     reportStatus(true, null);
   }
 
-  // Start polling for remote start (every 3 seconds)
   hivemindPollInterval = setInterval(pollForStart, 3000);
 })();
