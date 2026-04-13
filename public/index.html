@@ -7,79 +7,48 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #0a0a0a; color: #f0f0f0; font-family: 'Segoe UI', sans-serif; min-height: 100vh; padding: 28px; }
-
     h1 { font-size: 20px; font-weight: 700; letter-spacing: 1px; margin-bottom: 2px; }
     .sub { font-size: 11px; color: #444; margin-bottom: 24px; }
-
     .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
     .status-badge { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; background: #1a1a1a; color: #444; border: 1px solid #222; }
     .status-badge.on { background: #0d2b1a; color: #22cc66; border-color: #1a4a2a; }
-
     .btn { padding: 9px 20px; border: none; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; transition: opacity 0.15s; }
     .btn:hover { opacity: 0.8; }
     .btn:disabled { opacity: 0.25; cursor: default; }
     .btn-white { background: #fff; color: #000; }
     .btn-red { background: #cc2200; color: #fff; }
     .btn-dark { background: #1e1e1e; color: #ccc; border: 1px solid #2a2a2a; }
-
-    .main-layout { display: grid; grid-template-columns: 280px 1fr 220px; gap: 16px; align-items: start; margin-bottom: 16px; }
-
+    .main-layout { display: grid; grid-template-columns: 300px 1fr 220px; gap: 16px; align-items: start; margin-bottom: 16px; }
     .card { background: #141414; border: 1px solid #1e1e1e; border-radius: 10px; padding: 18px; margin-bottom: 16px; }
     .card-title { font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
-
-    /* Settings */
     .setting-row { margin-bottom: 12px; }
     .setting-label { font-size: 11px; color: #777; margin-bottom: 4px; display: block; }
-    input[type=number], select {
-      width: 100%; background: #0d0d0d; border: 1px solid #222; color: #f0f0f0;
-      border-radius: 5px; padding: 7px 9px; font-size: 12px; outline: none;
-    }
+    input[type=number], select { width: 100%; background: #0d0d0d; border: 1px solid #222; color: #f0f0f0; border-radius: 5px; padding: 7px 9px; font-size: 12px; outline: none; }
     input[type=number]:focus, select:focus { border-color: #3a3a3a; }
     select option { background: #1a1a1a; }
     .custom-delays { display: none; }
     .custom-delays.show { display: block; }
-
-    /* PC cards */
     .pc-block { background: #0d0d0d; border: 1px solid #1e1e1e; border-radius: 8px; padding: 14px; margin-bottom: 10px; }
     .pc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-    .pc-name-input { background: transparent; border: none; color: #fff; font-size: 13px; font-weight: 700; outline: none; width: 120px; }
+    .pc-name-input { background: transparent; border: none; color: #fff; font-size: 13px; font-weight: 700; outline: none; width: 130px; }
     .pc-name-input:focus { border-bottom: 1px solid #444; }
-    .btn-icon { background: none; border: none; color: #444; font-size: 15px; cursor: pointer; padding: 2px 6px; }
+    .btn-icon { background: none; border: none; color: #444; font-size: 14px; cursor: pointer; padding: 2px 5px; }
     .btn-icon:hover { color: #cc2200; }
-
     .group-block { margin-bottom: 8px; }
-    .group-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+    .group-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
     .group-label { font-size: 10px; color: #555; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
-
-    textarea {
-      width: 100%; background: #141414; border: 1px solid #222; color: #ccc;
-      border-radius: 5px; padding: 8px; font-size: 11px; font-family: monospace;
-      resize: vertical; outline: none; min-height: 70px;
-    }
+    .source-tag { font-size: 9px; background: #1a2a1a; color: #22cc66; border-radius: 3px; padding: 2px 6px; margin-left: 5px; }
+    textarea { width: 100%; background: #141414; border: 1px solid #222; color: #ccc; border-radius: 5px; padding: 8px; font-size: 11px; font-family: monospace; resize: vertical; outline: none; min-height: 60px; }
     textarea:focus { border-color: #3a3a3a; }
-
     .btn-add-group { background: none; border: 1px dashed #1e1e1e; color: #444; border-radius: 5px; width: 100%; padding: 6px; font-size: 11px; cursor: pointer; margin-top: 4px; }
     .btn-add-group:hover { border-color: #333; color: #777; }
     .btn-add-pc { background: #141414; color: #888; border: 1px dashed #2a2a2a; width: 100%; padding: 10px; margin-top: 4px; border-radius: 8px; font-size: 12px; cursor: pointer; }
     .btn-add-pc:hover { border-color: #444; color: #ccc; }
-
-    /* Status - grouped by PC */
     .pc-status-block { background: #0d0d0d; border: 1px solid #1e1e1e; border-radius: 8px; padding: 14px; margin-bottom: 10px; }
     .pc-status-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
     .pc-status-name { font-size: 13px; font-weight: 700; color: #fff; }
     .pc-online-count { font-size: 10px; color: #555; }
-
-    .group-status-row {
-      display: grid;
-      grid-template-columns: 80px 1fr 90px 80px;
-      gap: 8px;
-      align-items: center;
-      padding: 7px 10px;
-      background: #141414;
-      border: 1px solid #1a1a1a;
-      border-radius: 6px;
-      margin-bottom: 5px;
-    }
+    .group-status-row { display: grid; grid-template-columns: 80px 1fr 90px 80px; gap: 8px; align-items: center; padding: 7px 10px; background: #141414; border: 1px solid #1a1a1a; border-radius: 6px; margin-bottom: 5px; }
     .gs-label { font-size: 11px; font-weight: 700; color: #666; }
     .gs-store { font-size: 11px; color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .gs-store.idle { color: #333; }
@@ -87,49 +56,39 @@
     .gs-conn { display: flex; align-items: center; gap: 5px; font-size: 10px; color: #555; justify-content: flex-end; }
     .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #2a2a2a; flex-shrink: 0; }
     .dot.live { background: #22cc66; box-shadow: 0 0 5px #22cc6666; }
-    .dot.connected { background: #2255cc; box-shadow: 0 0 5px #2255cc66; }
-    .dot.offline { background: #333; }
-
-    /* Day folders */
+    .dot.connected { background: #2255cc; box-shadow: 0 0 5px #2255cc44; }
     .day-folders-layout { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
     .day-folder { background: #0d0d0d; border: 1px solid #1e1e1e; border-radius: 8px; overflow: hidden; }
-    .day-header {
-      padding: 10px 12px; font-size: 11px; font-weight: 700; color: #888;
-      text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
-      display: flex; align-items: center; justify-content: space-between;
-      user-select: none;
-    }
+    .day-header { padding: 10px 12px; font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; }
     .day-header:hover { color: #ccc; }
     .day-header .arrow { font-size: 9px; color: #444; transition: transform 0.2s; }
     .day-header.open .arrow { transform: rotate(90deg); }
     .day-body { display: none; padding: 0 10px 10px; }
     .day-body.open { display: block; }
-    .day-body textarea { min-height: 120px; font-size: 10px; }
-
+    .subgroup-label { font-size: 10px; color: #555; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 8px 0 4px; }
+    .day-body textarea { min-height: 80px; font-size: 10px; margin-bottom: 4px; }
+    .today-tag { font-size: 9px; background: #1a3a1a; color: #22cc66; border-radius: 3px; padding: 1px 5px; margin-left: 6px; }
     .save-note { font-size: 10px; color: #444; margin-top: 6px; text-align: center; height: 14px; }
     hr { border: none; border-top: 1px solid #1e1e1e; margin: 14px 0; }
-
-    .today-tag { font-size: 9px; background: #1a3a1a; color: #22cc66; border-radius: 3px; padding: 1px 5px; margin-left: 6px; }
+    .auto-assign-bar { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #0d1a0d; border: 1px solid #1a3a1a; border-radius: 6px; margin-bottom: 10px; font-size: 11px; color: #22cc66; }
   </style>
 </head>
 <body>
-
 <h1>⬡ RIPTAG HIVEMIND</h1>
 <p class="sub">Depop Auto-Engage Coordinator</p>
-
 <div class="top-bar">
   <div class="status-badge" id="statusBadge">● IDLE</div>
   <button class="btn btn-white" id="startBtn" disabled>▶ Start All</button>
   <button class="btn btn-red" id="stopBtn" disabled>■ Stop All</button>
   <span style="font-size:11px;color:#333;margin-left:auto;" id="lastSaved"></span>
 </div>
-
 <div class="main-layout">
-
-  <!-- LEFT: PC builder -->
   <div>
     <div class="card">
       <div class="card-title">PC Setup</div>
+      <div class="auto-assign-bar" id="autoAssignBar" style="display:none;">
+        <span>⚡</span><span id="autoAssignText"></span>
+      </div>
       <div id="pcList"></div>
       <button class="btn-add-pc" onclick="addPC()">+ Add PC</button>
       <hr>
@@ -137,73 +96,34 @@
       <div class="save-note" id="pcSaveNote"></div>
     </div>
   </div>
-
-  <!-- MIDDLE: Status -->
   <div>
     <div class="card">
       <div class="card-title">Live Status</div>
-      <div id="statusGrid">
-        <div style="color:#333;font-size:12px;">No extensions connected yet.</div>
-      </div>
+      <div id="statusGrid"><div style="color:#333;font-size:12px;">No extensions connected yet.</div></div>
     </div>
   </div>
-
-  <!-- RIGHT: Global settings -->
   <div>
     <div class="card">
       <div class="card-title">Global Settings</div>
-      <div class="setting-row">
-        <span class="setting-label">Minutes per Store</span>
-        <input type="number" id="sessionMinutes" value="35" min="1" max="120">
+      <div class="setting-row"><span class="setting-label">Minutes per Store</span><input type="number" id="sessionMinutes" value="35" min="1" max="120"></div>
+      <div class="setting-row"><span class="setting-label">Time Filter</span>
+        <select id="maxDays"><option value="7">Last 7 Days</option><option value="14">Last 14 Days</option><option value="30">Last 1 Month</option><option value="999">All Time</option></select>
       </div>
-      <div class="setting-row">
-        <span class="setting-label">Time Filter</span>
-        <select id="maxDays">
-          <option value="7">Last 7 Days</option>
-          <option value="14">Last 14 Days</option>
-          <option value="30">Last 1 Month</option>
-          <option value="999">All Time</option>
-        </select>
-      </div>
-      <div class="setting-row">
-        <span class="setting-label">Max Posts per Store</span>
-        <input type="number" id="maxPosts" value="30" min="1">
-      </div>
-      <div class="setting-row">
-        <span class="setting-label">Speed Preset</span>
-        <select id="speedPreset" onchange="toggleCustom()">
-          <option value="stealth">Stealth (Slowest)</option>
-          <option value="balanced" selected>Balanced</option>
-          <option value="fast">Fast</option>
-          <option value="custom">Custom</option>
-        </select>
+      <div class="setting-row"><span class="setting-label">Max Posts per Store</span><input type="number" id="maxPosts" value="30" min="1"></div>
+      <div class="setting-row"><span class="setting-label">Speed Preset</span>
+        <select id="speedPreset" onchange="toggleCustom()"><option value="stealth">Stealth (Slowest)</option><option value="balanced" selected>Balanced</option><option value="fast">Fast</option><option value="custom">Custom</option></select>
       </div>
       <div class="custom-delays" id="customDelays">
-        <div class="setting-row">
-          <span class="setting-label">Min Delay (sec)</span>
-          <input type="number" id="minDelay" value="1.5" min="0.5" step="0.5">
-        </div>
-        <div class="setting-row">
-          <span class="setting-label">Max Delay (sec)</span>
-          <input type="number" id="maxDelay" value="4" min="1" step="0.5">
-        </div>
-        <div class="setting-row">
-          <span class="setting-label">Hesitation Chance (%)</span>
-          <input type="number" id="hesitationChance" value="25" min="0" max="100" step="5">
-        </div>
-        <div class="setting-row">
-          <span class="setting-label">Hesitation Duration (sec)</span>
-          <input type="number" id="hesitationDuration" value="3" min="1" step="0.5">
-        </div>
+        <div class="setting-row"><span class="setting-label">Min Delay (sec)</span><input type="number" id="minDelay" value="1.5" min="0.5" step="0.5"></div>
+        <div class="setting-row"><span class="setting-label">Max Delay (sec)</span><input type="number" id="maxDelay" value="4" min="1" step="0.5"></div>
+        <div class="setting-row"><span class="setting-label">Hesitation Chance (%)</span><input type="number" id="hesitationChance" value="25" min="0" max="100" step="5"></div>
+        <div class="setting-row"><span class="setting-label">Hesitation Duration (sec)</span><input type="number" id="hesitationDuration" value="3" min="1" step="0.5"></div>
       </div>
       <button class="btn btn-dark" style="width:100%;margin-top:4px;" onclick="saveSettings()">Save Settings</button>
       <div class="save-note" id="settingsSaveNote"></div>
     </div>
   </div>
-
 </div>
-
-<!-- Day Folders -->
 <div class="card">
   <div class="card-title">📁 Store Link Folders</div>
   <div class="day-folders-layout" id="dayFolders"></div>
@@ -212,121 +132,109 @@
     <div class="save-note" id="folderSaveNote" style="margin:0;"></div>
   </div>
 </div>
-
 <script>
   const PRESETS = {
     stealth:  { minDelay: 3000, maxDelay: 7000, hesitationChance: 40, hesitationDuration: 4000 },
     balanced: { minDelay: 1500, maxDelay: 4000, hesitationChance: 25, hesitationDuration: 3000 },
     fast:     { minDelay: 800,  maxDelay: 2000, hesitationChance: 10, hesitationDuration: 1500 }
   };
-
   const DAYS = ['monday','tuesday','wednesday','thursday','friday'];
   const DAY_LABELS = { monday:'Monday', tuesday:'Tuesday', wednesday:'Wednesday', thursday:'Thursday', friday:'Friday' };
+  const GROUP_KEYS = ['g0','g1','g2'];
+  const GROUP_LABELS = { g0:'Group 1', g1:'Group 2', g2:'Group 3' };
 
-  let pcs = {};
-  let serverStatus = {};
-  let isStarted = false;
-  let pcCounter = 0;
-  let dayFolderData = { monday:'', tuesday:'', wednesday:'', thursday:'', friday:'' };
+  let pcs = {}, serverStatus = {}, isStarted = false, pcCounter = 0;
+  let dayFolderData = {
+    monday:{g0:'',g1:'',g2:''}, tuesday:{g0:'',g1:'',g2:''},
+    wednesday:{g0:'',g1:'',g2:''}, thursday:{g0:'',g1:'',g2:''},
+    friday:{g0:'',g1:'',g2:''}
+  };
 
-  // ── Day Folders ──
   function getTodayKey() {
-    const d = new Date().getDay();
-    return ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][d];
+    return ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][new Date().getDay()];
+  }
+
+  function autoAssignTodayLinks() {
+    const today = getTodayKey();
+    if (!DAYS.includes(today)) return;
+    const todayData = dayFolderData[today];
+    if (!todayData) return;
+    let assigned = false;
+    for (const [pcId, pc] of Object.entries(pcs)) {
+      pc.groups.forEach((group, gIdx) => {
+        const folderKey = GROUP_KEYS[gIdx];
+        const links = todayData[folderKey] || '';
+        if (links.trim()) {
+          group.queue = links.split('\n').map(s => s.trim()).filter(Boolean);
+          group.autoSource = DAY_LABELS[today] + ' / ' + GROUP_LABELS[folderKey];
+          assigned = true;
+        }
+      });
+    }
+    const bar = document.getElementById('autoAssignBar');
+    if (assigned) {
+      bar.style.display = 'flex';
+      document.getElementById('autoAssignText').textContent = 'Auto-assigned ' + DAY_LABELS[today] + "'s links to all PC groups";
+    }
   }
 
   function renderDayFolders() {
     const container = document.getElementById('dayFolders');
     container.innerHTML = '';
     const today = getTodayKey();
-
     DAYS.forEach(day => {
       const isToday = day === today;
       const div = document.createElement('div');
       div.className = 'day-folder';
+      let subHTML = GROUP_KEYS.map(gk => `
+        <div class="subgroup-label">${GROUP_LABELS[gk]}</div>
+        <textarea placeholder="https://www.depop.com/store1/" id="folder-${day}-${gk}"
+          onchange="dayFolderData['${day}']['${gk}']=this.value"
+        >${(dayFolderData[day]&&dayFolderData[day][gk])||''}</textarea>
+      `).join('');
       div.innerHTML = `
-        <div class="day-header${isToday ? ' open' : ''}" onclick="toggleDay('${day}', this)">
-          <span>${DAY_LABELS[day]}${isToday ? '<span class="today-tag">today</span>' : ''}</span>
+        <div class="day-header${isToday?' open':''}" onclick="toggleDay('${day}',this)">
+          <span>${DAY_LABELS[day]}${isToday?'<span class="today-tag">today</span>':''}</span>
           <span class="arrow">▶</span>
         </div>
-        <div class="day-body${isToday ? ' open' : ''}" id="day-${day}">
-          <textarea placeholder="Paste store links here..."
-            onchange="dayFolderData['${day}'] = this.value"
-          >${dayFolderData[day] || ''}</textarea>
-        </div>
+        <div class="day-body${isToday?' open':''}" id="day-${day}">${subHTML}</div>
       `;
       container.appendChild(div);
     });
   }
 
-  function toggleDay(day, headerEl) {
-    const body = document.getElementById(`day-${day}`);
-    const isOpen = body.classList.contains('open');
-    body.classList.toggle('open', !isOpen);
-    headerEl.classList.toggle('open', !isOpen);
+  function toggleDay(day, h) {
+    const b = document.getElementById('day-'+day);
+    const o = b.classList.contains('open');
+    b.classList.toggle('open', !o); h.classList.toggle('open', !o);
   }
 
   async function saveDayFolders() {
-    // Collect from textareas
-    DAYS.forEach(day => {
-      const ta = document.querySelector(`#day-${day} textarea`);
-      if (ta) dayFolderData[day] = ta.value;
-    });
+    DAYS.forEach(day => GROUP_KEYS.forEach(gk => {
+      const ta = document.getElementById('folder-'+day+'-'+gk);
+      if (ta) dayFolderData[day][gk] = ta.value;
+    }));
     const res = await fetch('/api/dayfolders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ dayFolders: dayFolderData })
     });
-    const data = await res.json();
-    if (data.ok) {
+    if ((await res.json()).ok) {
       document.getElementById('folderSaveNote').textContent = '✓ Saved';
-      setTimeout(() => document.getElementById('folderSaveNote').textContent = '', 2000);
+      setTimeout(()=>document.getElementById('folderSaveNote').textContent='', 2000);
+      autoAssignTodayLinks(); renderPCList();
     }
   }
 
-  // ── Settings ──
-  function toggleCustom() {
-    const isCustom = document.getElementById('speedPreset').value === 'custom';
-    document.getElementById('customDelays').className = `custom-delays${isCustom ? ' show' : ''}`;
-  }
-
-  async function saveSettings() {
-    const preset = document.getElementById('speedPreset').value;
-    const presetVals = preset !== 'custom' ? PRESETS[preset] : {
-      minDelay: parseFloat(document.getElementById('minDelay').value) * 1000,
-      maxDelay: parseFloat(document.getElementById('maxDelay').value) * 1000,
-      hesitationChance: parseInt(document.getElementById('hesitationChance').value),
-      hesitationDuration: parseFloat(document.getElementById('hesitationDuration').value) * 1000
-    };
-    const settings = {
-      sessionMinutes: parseInt(document.getElementById('sessionMinutes').value),
-      maxDays: parseInt(document.getElementById('maxDays').value),
-      maxPosts: parseInt(document.getElementById('maxPosts').value),
-      speedPreset: preset,
-      ...presetVals
-    };
-    const res = await fetch('/api/settings', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(settings)
-    });
-    const data = await res.json();
-    if (data.ok) {
-      document.getElementById('settingsSaveNote').textContent = '✓ Saved';
-      setTimeout(() => document.getElementById('settingsSaveNote').textContent = '', 2000);
-    }
-  }
-
-  // ── PC Builder ──
   function addPC() {
     pcCounter++;
-    const id = `pc${pcCounter}`;
-    pcs[id] = { label: `PC ${pcCounter}`, groups: [{ queue: [] }] };
-    renderPCList();
+    const id = 'pc'+pcCounter;
+    pcs[id] = { label:'PC '+pcCounter, groups:[{queue:[]}] };
+    autoAssignTodayLinks(); renderPCList();
   }
 
   function removePC(id) { delete pcs[id]; renderPCList(); }
-  function addGroup(pcId) { pcs[pcId].groups.push({ queue: [] }); renderPCList(); }
-  function removeGroup(pcId, gIdx) { pcs[pcId].groups.splice(gIdx, 1); renderPCList(); }
+  function addGroup(pcId) { pcs[pcId].groups.push({queue:[]}); autoAssignTodayLinks(); renderPCList(); }
+  function removeGroup(pcId, gIdx) { pcs[pcId].groups.splice(gIdx,1); renderPCList(); }
 
   function renderPCList() {
     const container = document.getElementById('pcList');
@@ -336,24 +244,24 @@
       block.className = 'pc-block';
       block.innerHTML = `
         <div class="pc-header">
-          <input class="pc-name-input" value="${pc.label}" onchange="pcs['${pcId}'].label = this.value" />
+          <input class="pc-name-input" value="${pc.label}" onchange="pcs['${pcId}'].label=this.value"/>
           <button class="btn-icon" onclick="removePC('${pcId}')">✕</button>
         </div>
         <div id="groups-${pcId}"></div>
         <button class="btn-add-group" onclick="addGroup('${pcId}')">+ Add Group</button>
       `;
       container.appendChild(block);
-      const groupsEl = document.getElementById(`groups-${pcId}`);
+      const groupsEl = document.getElementById('groups-'+pcId);
       pc.groups.forEach((group, gIdx) => {
         const gBlock = document.createElement('div');
         gBlock.className = 'group-block';
+        const tag = group.autoSource ? `<span class="source-tag">⚡ ${group.autoSource}</span>` : '';
         gBlock.innerHTML = `
           <div class="group-header">
-            <span class="group-label">Group ${gIdx + 1}</span>
-            <button class="btn-icon" style="font-size:11px" onclick="removeGroup('${pcId}', ${gIdx})">✕</button>
+            <div><span class="group-label">Group ${gIdx+1}</span>${tag}</div>
+            <button class="btn-icon" style="font-size:11px" onclick="removeGroup('${pcId}',${gIdx})">✕</button>
           </div>
-          <textarea placeholder="https://www.depop.com/store1/&#10;https://www.depop.com/store2/"
-            onchange="updateQueue('${pcId}', ${gIdx}, this.value)"
+          <textarea onchange="updateQueue('${pcId}',${gIdx},this.value)"
           >${group.queue.join('\n')}</textarea>
         `;
         groupsEl.appendChild(gBlock);
@@ -362,174 +270,140 @@
   }
 
   function updateQueue(pcId, gIdx, value) {
-    pcs[pcId].groups[gIdx].queue = value.split('\n').map(s => s.trim()).filter(Boolean);
+    pcs[pcId].groups[gIdx].queue = value.split('\n').map(s=>s.trim()).filter(Boolean);
+    pcs[pcId].groups[gIdx].autoSource = null;
   }
 
   async function saveConfig() {
     for (const [pcId, pc] of Object.entries(pcs)) {
       pc.groups.forEach((group, gIdx) => {
-        const blocks = document.querySelectorAll(`#groups-${pcId} .group-block`);
-        if (blocks[gIdx]) {
-          const ta = blocks[gIdx].querySelector('textarea');
-          if (ta) group.queue = ta.value.split('\n').map(s => s.trim()).filter(Boolean);
-        }
+        const blocks = document.querySelectorAll('#groups-'+pcId+' .group-block');
+        if (blocks[gIdx]) { const ta = blocks[gIdx].querySelector('textarea'); if (ta) group.queue = ta.value.split('\n').map(s=>s.trim()).filter(Boolean); }
       });
     }
-    const res = await fetch('/api/pcs', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pcs })
-    });
-    const data = await res.json();
-    if (data.ok) {
+    const res = await fetch('/api/pcs', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pcs}) });
+    if ((await res.json()).ok) {
       document.getElementById('startBtn').disabled = false;
       document.getElementById('pcSaveNote').textContent = '✓ Saved';
-      setTimeout(() => document.getElementById('pcSaveNote').textContent = '', 2000);
-      document.getElementById('lastSaved').textContent = `Last saved ${new Date().toLocaleTimeString()}`;
+      setTimeout(()=>document.getElementById('pcSaveNote').textContent='', 2000);
+      document.getElementById('lastSaved').textContent = 'Last saved '+new Date().toLocaleTimeString();
     }
   }
 
-  // ── Start / Stop ──
-  document.getElementById('startBtn').onclick = async () => {
-    await fetch('/api/start', { method: 'POST' });
-    isStarted = true; updateBadge();
-  };
-  document.getElementById('stopBtn').onclick = async () => {
-    await fetch('/api/stop', { method: 'POST' });
-    isStarted = false; updateBadge();
-  };
+  function toggleCustom() {
+    document.getElementById('customDelays').className = 'custom-delays'+(document.getElementById('speedPreset').value==='custom'?' show':'');
+  }
+
+  async function saveSettings() {
+    const preset = document.getElementById('speedPreset').value;
+    const presetVals = preset!=='custom' ? PRESETS[preset] : {
+      minDelay: parseFloat(document.getElementById('minDelay').value)*1000,
+      maxDelay: parseFloat(document.getElementById('maxDelay').value)*1000,
+      hesitationChance: parseInt(document.getElementById('hesitationChance').value),
+      hesitationDuration: parseFloat(document.getElementById('hesitationDuration').value)*1000
+    };
+    const settings = { sessionMinutes:parseInt(document.getElementById('sessionMinutes').value), maxDays:parseInt(document.getElementById('maxDays').value), maxPosts:parseInt(document.getElementById('maxPosts').value), speedPreset:preset, ...presetVals };
+    const res = await fetch('/api/settings', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(settings) });
+    if ((await res.json()).ok) {
+      document.getElementById('settingsSaveNote').textContent = '✓ Saved';
+      setTimeout(()=>document.getElementById('settingsSaveNote').textContent='', 2000);
+    }
+  }
+
+  document.getElementById('startBtn').onclick = async () => { await fetch('/api/start',{method:'POST'}); isStarted=true; updateBadge(); };
+  document.getElementById('stopBtn').onclick = async () => { await fetch('/api/stop',{method:'POST'}); isStarted=false; updateBadge(); };
 
   function updateBadge() {
-    const badge = document.getElementById('statusBadge');
-    badge.textContent = isStarted ? '● RUNNING' : '● IDLE';
-    badge.className = `status-badge${isStarted ? ' on' : ''}`;
+    const b = document.getElementById('statusBadge');
+    b.textContent = isStarted ? '● RUNNING' : '● IDLE';
+    b.className = 'status-badge'+(isStarted?' on':'');
     document.getElementById('startBtn').disabled = isStarted;
     document.getElementById('stopBtn').disabled = !isStarted;
   }
 
-  function timeSince(ms) {
-    const s = Math.floor((Date.now() - ms) / 1000);
-    if (s < 60) return `${s}s ago`;
-    return `${Math.floor(s / 60)}m ago`;
-  }
+  function timeSince(ms) { const s=Math.floor((Date.now()-ms)/1000); return s<60?s+'s ago':Math.floor(s/60)+'m ago'; }
 
   function renderStatus() {
     const grid = document.getElementById('statusGrid');
-
-    if (!Object.keys(serverStatus).length && !Object.keys(pcs).length) {
-      grid.innerHTML = '<div style="color:#333;font-size:12px;">No extensions connected yet.</div>';
-      return;
-    }
-
+    if (!Object.keys(pcs).length) { grid.innerHTML='<div style="color:#333;font-size:12px;">No PCs configured yet.</div>'; return; }
     grid.innerHTML = '';
-
-    // Group status by PC
     for (const [pcId, pc] of Object.entries(pcs)) {
+      const liveCount = pc.groups.filter((_,gIdx) => { const st=serverStatus[pcId+'-g'+gIdx]; return st&&st.running&&(Date.now()-st.lastSeen<12000); }).length;
+      const connCount = pc.groups.filter((_,gIdx) => { const st=serverStatus[pcId+'-g'+gIdx]; return st&&(Date.now()-st.lastSeen<20000); }).length;
       const block = document.createElement('div');
       block.className = 'pc-status-block';
-
-      const liveCount = pc.groups.filter((_, gIdx) => {
-        const st = serverStatus[`${pcId}-g${gIdx}`];
-        return st && st.running && (Date.now() - st.lastSeen < 12000);
-      }).length;
-
-      const connectedCount = pc.groups.filter((_, gIdx) => {
-        const st = serverStatus[`${pcId}-g${gIdx}`];
-        return st && (Date.now() - st.lastSeen < 20000);
-      }).length;
-
-      block.innerHTML = `
-        <div class="pc-status-header">
-          <span class="pc-status-name">${pc.label}</span>
-          <span class="pc-online-count">${connectedCount}/${pc.groups.length} connected · ${liveCount} running</span>
-        </div>
-        <div class="group-rows-${pcId}"></div>
-      `;
+      block.innerHTML = `<div class="pc-status-header"><span class="pc-status-name">${pc.label}</span><span class="pc-online-count">${connCount}/${pc.groups.length} connected · ${liveCount} running</span></div><div id="srows-${pcId}"></div>`;
       grid.appendChild(block);
-
-      const rowsEl = block.querySelector(`.group-rows-${pcId}`);
-
+      const rowsEl = document.getElementById('srows-'+pcId);
       pc.groups.forEach((group, gIdx) => {
-        const key = `${pcId}-g${gIdx}`;
+        const key = pcId+'-g'+gIdx;
         const st = serverStatus[key];
-        const isLive = st && st.running && (Date.now() - st.lastSeen < 12000);
-        const isConnected = st && (Date.now() - st.lastSeen < 20000);
-
-        let storeDisplay = '—';
-        let storeProgress = '';
-        if (st && st.currentStore) {
-          try {
-            storeDisplay = new URL(st.currentStore).pathname.replace(/\/$/, '').split('/').pop();
-          } catch { storeDisplay = st.currentStore; }
-        }
-        if (st && st.totalStores > 0) {
-          storeProgress = ` (${(st.storeIndex || 0) + 1}/${st.totalStores})`;
-        }
-
-        const listings = st ? (st.listingsProcessed || 0) : 0;
-
-        const connDot = isLive ? 'live' : isConnected ? 'connected' : 'offline';
-        const connLabel = isLive ? 'Running' : isConnected ? 'Idle' : 'Offline';
-
+        const isLive = st&&st.running&&(Date.now()-st.lastSeen<12000);
+        const isConn = st&&(Date.now()-st.lastSeen<20000);
+        let store = '—';
+        if (st&&st.currentStore) { try { store=new URL(st.currentStore).pathname.replace(/\/$/,'').split('/').pop(); } catch{store=st.currentStore;} }
+        const prog = (st&&st.totalStores>0) ? ` (${(st.storeIndex||0)+1}/${st.totalStores})` : '';
         const row = document.createElement('div');
         row.className = 'group-status-row';
         row.innerHTML = `
-          <div class="gs-label">Group ${gIdx + 1}</div>
-          <div class="gs-store ${isLive ? '' : 'idle'}">${isLive ? storeDisplay + storeProgress : '—'}</div>
-          <div class="gs-listings">${isLive ? `${listings} listings` : ''}</div>
-          <div class="gs-conn"><span class="dot ${connDot}"></span>${connLabel}</div>
+          <div class="gs-label">Group ${gIdx+1}</div>
+          <div class="gs-store ${isLive?'':'idle'}">${isLive?store+prog:'—'}</div>
+          <div class="gs-listings">${isLive?(st.listingsProcessed||0)+' listings':''}</div>
+          <div class="gs-conn"><span class="dot ${isLive?'live':isConn?'connected':''}"></span>${isLive?'Running':isConn?'Idle':'Offline'}</div>
         `;
         rowsEl.appendChild(row);
       });
     }
   }
 
-  function syncSettingsUI(settings) {
-    if (!settings) return;
-    document.getElementById('sessionMinutes').value = settings.sessionMinutes || 35;
-    document.getElementById('maxDays').value = settings.maxDays || 7;
-    document.getElementById('maxPosts').value = settings.maxPosts || 30;
-    document.getElementById('speedPreset').value = settings.speedPreset || 'balanced';
-    if (settings.speedPreset === 'custom') {
-      document.getElementById('minDelay').value = (settings.minDelay || 1500) / 1000;
-      document.getElementById('maxDelay').value = (settings.maxDelay || 4000) / 1000;
-      document.getElementById('hesitationChance').value = settings.hesitationChance || 25;
-      document.getElementById('hesitationDuration').value = (settings.hesitationDuration || 3000) / 1000;
+  function syncSettingsUI(s) {
+    if (!s) return;
+    document.getElementById('sessionMinutes').value = s.sessionMinutes||35;
+    document.getElementById('maxDays').value = s.maxDays||7;
+    document.getElementById('maxPosts').value = s.maxPosts||30;
+    document.getElementById('speedPreset').value = s.speedPreset||'balanced';
+    if (s.speedPreset==='custom') {
+      document.getElementById('minDelay').value = (s.minDelay||1500)/1000;
+      document.getElementById('maxDelay').value = (s.maxDelay||4000)/1000;
+      document.getElementById('hesitationChance').value = s.hesitationChance||25;
+      document.getElementById('hesitationDuration').value = (s.hesitationDuration||3000)/1000;
     }
     toggleCustom();
   }
 
   let initialLoad = true;
-
   async function poll() {
     try {
       const res = await fetch('/api/state');
       const data = await res.json();
       isStarted = data.started;
-      serverStatus = data.status || {};
-
-      // Sync PC config from server on first load
+      serverStatus = data.status||{};
       if (initialLoad) {
-        if (Object.keys(data.pcs || {}).length) {
+        if (Object.keys(data.pcs||{}).length) {
           pcs = data.pcs;
-          const nums = Object.keys(pcs).map(k => parseInt(k.replace('pc',''))).filter(n => !isNaN(n));
+          const nums = Object.keys(pcs).map(k=>parseInt(k.replace('pc',''))).filter(n=>!isNaN(n));
           pcCounter = nums.length ? Math.max(...nums) : 0;
-          renderPCList();
-          document.getElementById('startBtn').disabled = false;
         }
-        // Sync day folders
         if (data.dayFolders) {
-          dayFolderData = { ...dayFolderData, ...data.dayFolders };
+          DAYS.forEach(day => {
+            if (data.dayFolders[day]) {
+              dayFolderData[day] = typeof data.dayFolders[day]==='string'
+                ? {g0:data.dayFolders[day],g1:'',g2:''}
+                : {g0:'',g1:'',g2:'',...data.dayFolders[day]};
+            }
+          });
         }
         renderDayFolders();
+        autoAssignTodayLinks();
+        renderPCList();
         syncSettingsUI(data.settings);
+        if (Object.keys(pcs).length) document.getElementById('startBtn').disabled = false;
         initialLoad = false;
       }
-
       updateBadge();
       renderStatus();
     } catch(e) {}
   }
-
   poll();
   setInterval(poll, 4000);
 </script>

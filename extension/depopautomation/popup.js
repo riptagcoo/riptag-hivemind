@@ -213,7 +213,7 @@ async function pollForStart() {
     const res = await fetch(`${HIVEMIND_URL}/api/queue/${saved.hivemindPC}/${saved.hivemindGroup || 0}`);
     const data = await res.json();
 
-    // ── Auto-sync queue if it changed and not currently running ──
+    // ── Auto-sync queue if changed and not running ──
     if (data.queue && data.queue.length > 0) {
       const newHash = hashQueue(data.queue);
       if (newHash !== lastQueueHash && !saved.running) {
@@ -223,13 +223,19 @@ async function pollForStart() {
       }
     }
 
-    // ── Remote start ──
+    // ── Remote START ──
     if (data.started && !remoteStartFired) {
       if (!saved.running) {
         remoteStartFired = true;
         document.getElementById('start').click();
       }
     }
+
+    // ── Remote STOP ──
+    if (!data.started && saved.running) {
+      document.getElementById('stop').click();
+    }
+
     if (!data.started) remoteStartFired = false;
   } catch(e) {}
 }

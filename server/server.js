@@ -8,13 +8,11 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
-// ── PostgreSQL connection ──
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
-// ── Create table if it doesn't exist ──
 async function initDB() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS hivemind_state (
@@ -29,51 +27,36 @@ async function dbGet(key) {
   try {
     const res = await pool.query('SELECT value FROM hivemind_state WHERE key = $1', [key]);
     return res.rows.length ? res.rows[0].value : null;
-  } catch(e) {
-    console.error('[DB] Get error:', e.message);
-    return null;
-  }
+  } catch(e) { console.error('[DB] Get error:', e.message); return null; }
 }
 
 async function dbSet(key, value) {
   try {
     await pool.query(`
-      INSERT INTO hivemind_state (key, value)
-      VALUES ($1, $2)
+      INSERT INTO hivemind_state (key, value) VALUES ($1, $2)
       ON CONFLICT (key) DO UPDATE SET value = $2
     `, [key, JSON.stringify(value)]);
-  } catch(e) {
-    console.error('[DB] Set error:', e.message);
-  }
+  } catch(e) { console.error('[DB] Set error:', e.message); }
 }
 
-// ── Runtime state (not persisted — resets on deploy, which is fine) ──
-let runtime = {
-  started: false,
-  startedAt: null,
-  status: {}
-};
+let runtime = { started: false, startedAt: null, status: {} };
 
 const DEFAULT_SETTINGS = {
-  sessionMinutes: 35,
-  maxDays: 7,
-  maxPosts: 30,
-  speedPreset: 'balanced',
-  minDelay: 1500,
-  maxDelay: 4000,
-  hesitationChance: 25,
-  hesitationDuration: 3000
+  sessionMinutes: 35, maxDays: 7, maxPosts: 30, speedPreset: 'balanced',
+  minDelay: 1500, maxDelay: 4000, hesitationChance: 25, hesitationDuration: 3000
 };
 
 const DEFAULT_DAY_FOLDERS = {
-  monday: '', tuesday: '', wednesday: '', thursday: '', friday: ''
+  monday:    { g0: '', g1: '', g2: '' },
+  tuesday:   { g0: '', g1: '', g2: '' },
+  wednesday: { g0: '', g1: '', g2: '' },
+  thursday:  { g0: '', g1: '', g2: '' },
+  friday:    { g0: '', g1: '', g2: '' }
 };
 
 async function getFullState() {
   const [pcs, settings, dayFolders] = await Promise.all([
-    dbGet('pcs'),
-    dbGet('settings'),
-    dbGet('dayFolders')
+    dbGet('pcs'), dbGet('settings'), dbGet('dayFolders')
   ]);
   return {
     pcs: pcs || {},
@@ -85,17 +68,12 @@ async function getFullState() {
   };
 }
 
-// ── Routes ──
-app.get('/api/state', async (req, res) => {
-  res.json(await getFullState());
-});
+app.get('/api/state', async (req, res) => res.json(await getFullState()));
 
 app.post('/api/pcs', async (req, res) => {
   const { pcs } = req.body;
   if (!pcs) return res.status(400).json({ error: 'missing pcs' });
   await dbSet('pcs', pcs);
-  runtime.started = false;
-  runtime.startedAt = null;
   runtime.status = {};
   res.json({ ok: true });
 });
@@ -131,23 +109,15 @@ app.get('/api/queue/:pcId/:groupIndex', async (req, res) => {
   const { pcId, groupIndex } = req.params;
   const [pcs, settings] = await Promise.all([dbGet('pcs'), dbGet('settings')]);
   const pc = (pcs || {})[pcId];
-  if (!pc) return res.json({ queue: [], started: false, settings: settings || DEFAULT_SETTINGS });
+  if (!pc) return res.json({ queue: [], started: runtime.started, settings: settings || DEFAULT_SETTINGS });
   const group = pc.groups[parseInt(groupIndex)];
   const queue = group ? group.queue : [];
-  res.json({
-    queue,
-    started: runtime.started,
-    startedAt: runtime.startedAt,
-    settings: settings || DEFAULT_SETTINGS
-  });
+  res.json({ queue, started: runtime.started, startedAt: runtime.startedAt, settings: settings || DEFAULT_SETTINGS });
 });
 
 app.get('/api/pcs-list', async (req, res) => {
   const pcs = await dbGet('pcs') || {};
-  const list = Object.entries(pcs).map(([id, pc]) => ({
-    id, label: pc.label, groupCount: pc.groups.length
-  }));
-  res.json(list);
+  res.json(Object.entries(pcs).map(([id, pc]) => ({ id, label: pc.label, groupCount: pc.groups.length })));
 });
 
 app.post('/api/status', (req, res) => {
@@ -160,7 +130,4 @@ app.post('/api/status', (req, res) => {
 const PORT = process.env.PORT || 3000;
 initDB().then(() => {
   app.listen(PORT, () => console.log(`[Hivemind] Running on port ${PORT}`));
-}).catch(err => {
-  console.error('[Hivemind] DB init failed:', err);
-  process.exit(1);
-});
+}).catch(err => { console.error('[Hivemind] DB init failed:', err); process.exit(1); });
