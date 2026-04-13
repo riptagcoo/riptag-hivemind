@@ -5,136 +5,113 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>Riptag Hivemind</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #0a0a0a; color: #f0f0f0; font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#0a0a0a;color:#f0f0f0;font-family:'Segoe UI',sans-serif;min-height:100vh}
+    .header{padding:20px 20px 0}
+    h1{font-size:18px;font-weight:700;letter-spacing:1px}
+    .sub{font-size:11px;color:#444;margin-bottom:14px}
+    .top-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:0 20px 14px}
+    .status-badge{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;background:#1a1a1a;color:#444;border:1px solid #222;white-space:nowrap}
+    .status-badge.on{background:#0d2b1a;color:#22cc66;border-color:#1a4a2a}
+    .btn{padding:8px 16px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;transition:opacity .15s;white-space:nowrap}
+    .btn:hover{opacity:.8}
+    .btn:disabled{opacity:.25;cursor:default}
+    .btn-white{background:#fff;color:#000}
+    .btn-red{background:#cc2200;color:#fff}
+    .btn-dark{background:#1e1e1e;color:#ccc;border:1px solid #2a2a2a}
+    .btn-sm{padding:5px 10px;font-size:11px}
+    .spacer{flex:1}
+    .sched-info{font-size:10px;color:#444;white-space:nowrap}
+    .tabs{display:flex;border-bottom:1px solid #1e1e1e;padding:0 20px;overflow-x:auto}
+    .tab{padding:10px 16px;font-size:12px;font-weight:600;color:#555;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s}
+    .tab:hover{color:#888}
+    .tab.active{color:#fff;border-bottom-color:#fff}
+    .tab-content{display:none;padding:20px}
+    .tab-content.active{display:block}
+    .card{background:#141414;border:1px solid #1e1e1e;border-radius:10px;padding:16px;margin-bottom:14px}
+    .card-title{font-size:10px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+    .ops-layout{display:grid;grid-template-columns:280px 1fr 200px;gap:14px}
+    @media(max-width:900px){.ops-layout{grid-template-columns:1fr}}
+    .setting-row{margin-bottom:10px}
+    .setting-label{font-size:10px;color:#777;margin-bottom:3px;display:block}
+    input[type=number],select{width:100%;background:#0d0d0d;border:1px solid #222;color:#f0f0f0;border-radius:5px;padding:6px 8px;font-size:11px;outline:none}
+    input[type=number]:focus,select:focus{border-color:#3a3a3a}
+    select option{background:#1a1a1a}
+    .custom-delays{display:none}
+    .custom-delays.show{display:block}
+    .pc-block{background:#0d0d0d;border:1px solid #1e1e1e;border-radius:8px;padding:12px;margin-bottom:8px}
+    .pc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    .pc-name-input{background:transparent;border:none;color:#fff;font-size:13px;font-weight:700;outline:none;width:130px}
+    .pc-name-input:focus{border-bottom:1px solid #444}
+    .btn-icon{background:none;border:none;color:#444;font-size:13px;cursor:pointer;padding:2px 4px}
+    .btn-icon:hover{color:#cc2200}
+    .group-block{margin-bottom:6px}
+    .group-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+    .group-label{font-size:10px;color:#555;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+    .source-tag{font-size:9px;background:#1a2a1a;color:#22cc66;border-radius:3px;padding:1px 5px;margin-left:4px}
+    textarea{width:100%;background:#141414;border:1px solid #222;color:#ccc;border-radius:5px;padding:7px;font-size:11px;font-family:monospace;resize:vertical;outline:none;min-height:55px}
+    textarea:focus{border-color:#3a3a3a}
+    .btn-add-group{background:none;border:1px dashed #1e1e1e;color:#444;border-radius:5px;width:100%;padding:5px;font-size:11px;cursor:pointer;margin-top:3px}
+    .btn-add-group:hover{border-color:#333;color:#666}
+    .btn-add-pc{background:#141414;color:#888;border:1px dashed #2a2a2a;width:100%;padding:9px;margin-top:3px;border-radius:8px;font-size:12px;cursor:pointer}
+    .btn-add-pc:hover{border-color:#444;color:#ccc}
+    .auto-assign-bar{display:flex;align-items:center;gap:7px;padding:7px 10px;background:#0d1a0d;border:1px solid #1a3a1a;border-radius:6px;margin-bottom:8px;font-size:11px;color:#22cc66}
+    .save-note{font-size:10px;color:#444;text-align:center;height:14px;margin-top:5px}
+    hr{border:none;border-top:1px solid #1e1e1e;margin:12px 0}
+    .pc-status-block{background:#0d0d0d;border:1px solid #1e1e1e;border-radius:8px;padding:12px;margin-bottom:8px}
+    .pc-status-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    .pc-status-name{font-size:13px;font-weight:700}
+    .pc-online-count{font-size:10px;color:#555}
+    .group-status-row{display:grid;grid-template-columns:70px 1fr 80px 70px;gap:6px;align-items:center;padding:6px 9px;background:#141414;border:1px solid #1a1a1a;border-radius:5px;margin-bottom:4px}
+    .gs-label{font-size:10px;font-weight:700;color:#666}
+    .gs-store{font-size:10px;color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .gs-store.idle{color:#333}
+    .gs-listings{font-size:10px;color:#888;text-align:right}
+    .gs-conn{display:flex;align-items:center;gap:4px;font-size:10px;color:#555;justify-content:flex-end}
+    .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#2a2a2a;flex-shrink:0}
+    .dot.live{background:#22cc66;box-shadow:0 0 5px #22cc6666}
+    .day-folders-layout{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+    @media(max-width:800px){.day-folders-layout{grid-template-columns:1fr 1fr}}
+    @media(max-width:500px){.day-folders-layout{grid-template-columns:1fr}}
+    .day-folder{background:#0d0d0d;border:1px solid #1e1e1e;border-radius:8px;overflow:hidden}
+    .day-header{padding:9px 11px;font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none}
+    .day-header:hover{color:#ccc}
+    .day-header .arrow{font-size:9px;color:#444;transition:transform .2s}
+    .day-header.open .arrow{transform:rotate(90deg)}
+    .day-body{display:none;padding:0 10px 10px}
+    .day-body.open{display:block}
+    .subgroup-label{font-size:10px;color:#555;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin:7px 0 3px}
+    .day-body textarea{min-height:75px;font-size:10px}
+    .today-tag{font-size:9px;background:#1a3a1a;color:#22cc66;border-radius:3px;padding:1px 4px;margin-left:5px}
 
-    .header { padding: 20px 20px 0; }
-    h1 { font-size: 18px; font-weight: 700; letter-spacing: 1px; }
-    .sub { font-size: 11px; color: #444; margin-bottom: 16px; }
-
-    /* Top bar */
-    .top-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 0 20px 16px; }
-    .status-badge { padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #1a1a1a; color: #444; border: 1px solid #222; white-space: nowrap; }
-    .status-badge.on { background: #0d2b1a; color: #22cc66; border-color: #1a4a2a; }
-    .btn { padding: 8px 16px; border: none; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; transition: opacity 0.15s; white-space: nowrap; }
-    .btn:hover { opacity: 0.8; }
-    .btn:disabled { opacity: 0.25; cursor: default; }
-    .btn-white { background: #fff; color: #000; }
-    .btn-red { background: #cc2200; color: #fff; }
-    .btn-dark { background: #1e1e1e; color: #ccc; border: 1px solid #2a2a2a; }
-    .btn-sm { padding: 5px 10px; font-size: 11px; }
-    .spacer { flex: 1; }
-    .sched-info { font-size: 10px; color: #444; white-space: nowrap; }
-
-    /* Tabs */
-    .tabs { display: flex; border-bottom: 1px solid #1e1e1e; padding: 0 20px; overflow-x: auto; }
-    .tab { padding: 10px 16px; font-size: 12px; font-weight: 600; color: #555; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: color 0.15s; }
-    .tab:hover { color: #888; }
-    .tab.active { color: #fff; border-bottom-color: #fff; }
-
-    /* Tab content */
-    .tab-content { display: none; padding: 20px; }
-    .tab-content.active { display: block; }
-
-    /* Cards */
-    .card { background: #141414; border: 1px solid #1e1e1e; border-radius: 10px; padding: 16px; margin-bottom: 14px; }
-    .card-title { font-size: 10px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-
-    /* Operations layout */
-    .ops-layout { display: grid; grid-template-columns: 280px 1fr 200px; gap: 14px; }
-    @media (max-width: 900px) { .ops-layout { grid-template-columns: 1fr; } }
-
-    /* Settings */
-    .setting-row { margin-bottom: 10px; }
-    .setting-label { font-size: 10px; color: #777; margin-bottom: 3px; display: block; }
-    input[type=number], select { width: 100%; background: #0d0d0d; border: 1px solid #222; color: #f0f0f0; border-radius: 5px; padding: 6px 8px; font-size: 11px; outline: none; }
-    input[type=number]:focus, select:focus { border-color: #3a3a3a; }
-    select option { background: #1a1a1a; }
-    .custom-delays { display: none; }
-    .custom-delays.show { display: block; }
-
-    /* PC cards */
-    .pc-block { background: #0d0d0d; border: 1px solid #1e1e1e; border-radius: 8px; padding: 12px; margin-bottom: 8px; }
-    .pc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-    .pc-name-input { background: transparent; border: none; color: #fff; font-size: 13px; font-weight: 700; outline: none; width: 130px; }
-    .pc-name-input:focus { border-bottom: 1px solid #444; }
-    .btn-icon { background: none; border: none; color: #444; font-size: 13px; cursor: pointer; padding: 2px 4px; }
-    .btn-icon:hover { color: #cc2200; }
-    .group-block { margin-bottom: 6px; }
-    .group-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-    .group-label { font-size: 10px; color: #555; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
-    .source-tag { font-size: 9px; background: #1a2a1a; color: #22cc66; border-radius: 3px; padding: 1px 5px; margin-left: 4px; }
-    textarea { width: 100%; background: #141414; border: 1px solid #222; color: #ccc; border-radius: 5px; padding: 7px; font-size: 11px; font-family: monospace; resize: vertical; outline: none; min-height: 55px; }
-    textarea:focus { border-color: #3a3a3a; }
-    .btn-add-group { background: none; border: 1px dashed #1e1e1e; color: #444; border-radius: 5px; width: 100%; padding: 5px; font-size: 11px; cursor: pointer; margin-top: 3px; }
-    .btn-add-group:hover { border-color: #333; color: #666; }
-    .btn-add-pc { background: #141414; color: #888; border: 1px dashed #2a2a2a; width: 100%; padding: 9px; margin-top: 3px; border-radius: 8px; font-size: 12px; cursor: pointer; }
-    .btn-add-pc:hover { border-color: #444; color: #ccc; }
-    .auto-assign-bar { display: flex; align-items: center; gap: 7px; padding: 7px 10px; background: #0d1a0d; border: 1px solid #1a3a1a; border-radius: 6px; margin-bottom: 8px; font-size: 11px; color: #22cc66; }
-    .save-note { font-size: 10px; color: #444; text-align: center; height: 14px; margin-top: 5px; }
-    hr { border: none; border-top: 1px solid #1e1e1e; margin: 12px 0; }
-
-    /* Status in ops tab */
-    .pc-status-block { background: #0d0d0d; border: 1px solid #1e1e1e; border-radius: 8px; padding: 12px; margin-bottom: 8px; }
-    .pc-status-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-    .pc-status-name { font-size: 13px; font-weight: 700; }
-    .pc-online-count { font-size: 10px; color: #555; }
-    .group-status-row { display: grid; grid-template-columns: 70px 1fr 80px 70px; gap: 6px; align-items: center; padding: 6px 9px; background: #141414; border: 1px solid #1a1a1a; border-radius: 5px; margin-bottom: 4px; }
-    .gs-label { font-size: 10px; font-weight: 700; color: #666; }
-    .gs-store { font-size: 10px; color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .gs-store.idle { color: #333; }
-    .gs-listings { font-size: 10px; color: #888; text-align: right; }
-    .gs-conn { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #555; justify-content: flex-end; }
-    .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #2a2a2a; flex-shrink: 0; }
-    .dot.live { background: #22cc66; box-shadow: 0 0 5px #22cc6666; }
-    .dot.connected { background: #2255cc; box-shadow: 0 0 5px #2255cc44; }
-
-    /* Day folders */
-    .day-folders-layout { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
-    @media (max-width: 800px) { .day-folders-layout { grid-template-columns: 1fr 1fr; } }
-    @media (max-width: 500px) { .day-folders-layout { grid-template-columns: 1fr; } }
-    .day-folder { background: #0d0d0d; border: 1px solid #1e1e1e; border-radius: 8px; overflow: hidden; }
-    .day-header { padding: 9px 11px; font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; }
-    .day-header:hover { color: #ccc; }
-    .day-header .arrow { font-size: 9px; color: #444; transition: transform 0.2s; }
-    .day-header.open .arrow { transform: rotate(90deg); }
-    .day-body { display: none; padding: 0 10px 10px; }
-    .day-body.open { display: block; }
-    .subgroup-label { font-size: 10px; color: #555; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 7px 0 3px; }
-    .day-body textarea { min-height: 75px; font-size: 10px; }
-    .today-tag { font-size: 9px; background: #1a3a1a; color: #22cc66; border-radius: 3px; padding: 1px 4px; margin-left: 5px; }
-
-    /* Live Log tab */
-    .log-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
-    @media (max-width: 600px) { .log-grid { grid-template-columns: 1fr; } }
-    .log-pc-card { background: #0d0d0d; border: 1px solid #1e1e1e; border-radius: 8px; padding: 14px; }
-    .log-pc-name { font-size: 14px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
-    .log-pc-badge { font-size: 10px; color: #555; }
-    .log-group { background: #141414; border: 1px solid #1a1a1a; border-radius: 6px; padding: 10px; margin-bottom: 6px; }
-    .log-group-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-    .log-group-name { font-size: 11px; font-weight: 700; color: #888; }
-    .log-conn-badge { font-size: 9px; padding: 2px 6px; border-radius: 10px; font-weight: 700; }
-    .log-conn-badge.running { background: #0d2b1a; color: #22cc66; }
-    .log-conn-badge.idle { background: #1a1a2a; color: #2255cc; }
-    .log-conn-badge.offline { background: #1a1a1a; color: #444; }
-    .log-stat { display: flex; justify-content: space-between; font-size: 10px; color: #555; margin-bottom: 3px; }
-    .log-stat span { color: #888; }
-    .log-store { font-size: 11px; color: #ccc; margin-top: 6px; padding: 5px 8px; background: #0a0a0a; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .log-store.idle { color: #333; }
-    .log-timer { font-size: 20px; font-weight: 700; color: #fff; text-align: center; margin: 6px 0; }
-    .progress-bar-wrap { background: #1a1a1a; border-radius: 10px; height: 4px; margin-top: 6px; }
-    .progress-bar-fill { background: #22cc66; height: 4px; border-radius: 10px; transition: width 0.5s; }
-
-    .last-updated { font-size: 9px; color: #333; text-align: right; margin-top: 10px; }
+    /* LIVE LOG */
+    .log-pc-block{background:#0d0d0d;border:1px solid #1e1e1e;border-radius:10px;padding:16px;margin-bottom:16px}
+    .log-pc-title{font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+    .log-pc-meta{font-size:10px;color:#555}
+    .log-groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+    .log-group-card{background:#141414;border:1px solid #1a1a1a;border-radius:8px;padding:12px}
+    .log-group-title{font-size:11px;font-weight:700;color:#888;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+    .log-accounts{display:flex;flex-direction:column;gap:8px}
+    .log-account{background:#0d0d0d;border:1px solid #1a1a1a;border-radius:6px;padding:9px}
+    .log-acct-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+    .log-acct-name{font-size:10px;font-weight:700;color:#666}
+    .log-running-badge{font-size:9px;padding:2px 6px;border-radius:10px;font-weight:700}
+    .log-running-badge.running{background:#0d2b1a;color:#22cc66}
+    .log-running-badge.offline{background:#1a1a1a;color:#444}
+    .log-store-name{font-size:10px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px}
+    .log-store-name.active{color:#aaa}
+    .log-stats{display:flex;justify-content:space-between;font-size:9px;color:#444;margin-bottom:6px}
+    .log-stats span{color:#666}
+    .log-timer{font-size:16px;font-weight:700;text-align:center;color:#fff;margin:4px 0}
+    .progress-wrap{background:#1a1a1a;border-radius:10px;height:5px;overflow:hidden}
+    .progress-fill{height:5px;border-radius:10px;background:#22cc66;transition:width .8s ease}
   </style>
 </head>
 <body>
-
 <div class="header">
   <h1>⬡ RIPTAG HIVEMIND</h1>
   <p class="sub">Depop Auto-Engage Coordinator</p>
 </div>
-
 <div class="top-bar">
   <div class="status-badge" id="statusBadge">● IDLE</div>
   <button class="btn btn-white" id="startBtn" disabled>▶ Start All</button>
@@ -142,25 +119,21 @@
   <div class="spacer"></div>
   <span class="sched-info">⏰ Auto 7PM MST</span>
   <button class="btn btn-dark btn-sm" onclick="triggerNow()">▶ Test Now</button>
-  <span style="font-size:10px;color:#333;" id="lastSaved"></span>
+  <span style="font-size:10px;color:#333" id="lastSaved"></span>
 </div>
-
 <div class="tabs">
-  <div class="tab active" onclick="switchTab('ops', this)">Operations</div>
-  <div class="tab" onclick="switchTab('folders', this)">Store Folders</div>
-  <div class="tab" onclick="switchTab('log', this)">Live Log</div>
+  <div class="tab active" onclick="switchTab('ops',this)">Operations</div>
+  <div class="tab" onclick="switchTab('folders',this)">Store Folders</div>
+  <div class="tab" onclick="switchTab('log',this)">Live Log</div>
 </div>
 
-<!-- OPERATIONS TAB -->
+<!-- OPERATIONS -->
 <div class="tab-content active" id="tab-ops">
   <div class="ops-layout">
-
     <div>
       <div class="card">
         <div class="card-title">PC Setup</div>
-        <div class="auto-assign-bar" id="autoAssignBar" style="display:none;">
-          <span>⚡</span><span id="autoAssignText"></span>
-        </div>
+        <div class="auto-assign-bar" id="autoAssignBar" style="display:none"><span>⚡</span><span id="autoAssignText"></span></div>
         <div id="pcList"></div>
         <button class="btn-add-pc" onclick="addPC()">+ Add PC</button>
         <hr>
@@ -168,309 +141,285 @@
         <div class="save-note" id="pcSaveNote"></div>
       </div>
     </div>
-
     <div>
       <div class="card">
         <div class="card-title">Live Status</div>
-        <div id="statusGrid"><div style="color:#333;font-size:12px;">No extensions connected yet.</div></div>
+        <div id="statusGrid"><div style="color:#333;font-size:12px">No extensions connected yet.</div></div>
       </div>
     </div>
-
     <div>
       <div class="card">
         <div class="card-title">Global Settings</div>
         <div class="setting-row"><span class="setting-label">Minutes per Store</span><input type="number" id="sessionMinutes" value="35" min="1" max="120"></div>
-        <div class="setting-row"><span class="setting-label">Time Filter</span>
-          <select id="maxDays"><option value="7">Last 7 Days</option><option value="14">Last 14 Days</option><option value="30">Last 1 Month</option><option value="999">All Time</option></select>
-        </div>
+        <div class="setting-row"><span class="setting-label">Time Filter</span><select id="maxDays"><option value="7">Last 7 Days</option><option value="14">Last 14 Days</option><option value="30">Last Month</option><option value="999">All Time</option></select></div>
         <div class="setting-row"><span class="setting-label">Max Posts per Store</span><input type="number" id="maxPosts" value="30" min="1"></div>
-        <div class="setting-row"><span class="setting-label">Speed Preset</span>
-          <select id="speedPreset" onchange="toggleCustom()"><option value="stealth">Stealth</option><option value="balanced" selected>Balanced</option><option value="fast">Fast</option><option value="custom">Custom</option></select>
-        </div>
+        <div class="setting-row"><span class="setting-label">Speed Preset</span><select id="speedPreset" onchange="toggleCustom()"><option value="stealth">Stealth</option><option value="balanced" selected>Balanced</option><option value="fast">Fast</option><option value="custom">Custom</option></select></div>
         <div class="custom-delays" id="customDelays">
           <div class="setting-row"><span class="setting-label">Min Delay (sec)</span><input type="number" id="minDelay" value="1.5" min="0.5" step="0.5"></div>
           <div class="setting-row"><span class="setting-label">Max Delay (sec)</span><input type="number" id="maxDelay" value="4" min="1" step="0.5"></div>
           <div class="setting-row"><span class="setting-label">Hesitation %</span><input type="number" id="hesitationChance" value="25" min="0" max="100" step="5"></div>
           <div class="setting-row"><span class="setting-label">Hesitation Dur (sec)</span><input type="number" id="hesitationDuration" value="3" min="1" step="0.5"></div>
         </div>
-        <button class="btn btn-dark" style="width:100%;margin-top:4px;" onclick="saveSettings()">Save Settings</button>
+        <button class="btn btn-dark" style="width:100%;margin-top:4px" onclick="saveSettings()">Save Settings</button>
         <div class="save-note" id="settingsSaveNote"></div>
       </div>
     </div>
-
   </div>
 </div>
 
-<!-- STORE FOLDERS TAB -->
+<!-- STORE FOLDERS -->
 <div class="tab-content" id="tab-folders">
   <div class="card">
-    <div class="card-title">📁 Store Link Folders — Paste links by day & group</div>
+    <div class="card-title">📁 Store Link Folders</div>
     <div class="day-folders-layout" id="dayFolders"></div>
-    <div style="margin-top:12px;display:flex;align-items:center;gap:10px;">
+    <div style="margin-top:12px;display:flex;align-items:center;gap:10px">
       <button class="btn btn-dark" onclick="saveDayFolders()">Save Folders</button>
-      <div class="save-note" id="folderSaveNote" style="margin:0;height:auto;"></div>
+      <span class="save-note" id="folderSaveNote" style="margin:0;height:auto"></span>
     </div>
   </div>
 </div>
 
-<!-- LIVE LOG TAB -->
+<!-- LIVE LOG -->
 <div class="tab-content" id="tab-log">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-    <div style="font-size:11px;color:#555;">Updates every 4 seconds</div>
-    <div class="last-updated" id="lastUpdated"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <div style="font-size:11px;color:#555">Updates every 4s — shows all accounts per group</div>
+    <div style="font-size:9px;color:#333" id="lastUpdated"></div>
   </div>
-  <div class="log-grid" id="logGrid">
-    <div style="color:#333;font-size:12px;">No data yet.</div>
-  </div>
+  <div id="logContainer"><div style="color:#333;font-size:12px">No data yet.</div></div>
 </div>
 
 <script>
-  const PRESETS = { stealth:{minDelay:3000,maxDelay:7000,hesitationChance:40,hesitationDuration:4000}, balanced:{minDelay:1500,maxDelay:4000,hesitationChance:25,hesitationDuration:3000}, fast:{minDelay:800,maxDelay:2000,hesitationChance:10,hesitationDuration:1500} };
-  const DAYS = ['monday','tuesday','wednesday','thursday','friday'];
-  const DAY_LABELS = { monday:'Monday', tuesday:'Tuesday', wednesday:'Wednesday', thursday:'Thursday', friday:'Friday' };
-  const GROUP_KEYS = ['g0','g1','g2'];
-  const GROUP_LABELS = { g0:'Group 1', g1:'Group 2', g2:'Group 3' };
+const PRESETS={stealth:{minDelay:3000,maxDelay:7000,hesitationChance:40,hesitationDuration:4000},balanced:{minDelay:1500,maxDelay:4000,hesitationChance:25,hesitationDuration:3000},fast:{minDelay:800,maxDelay:2000,hesitationChance:10,hesitationDuration:1500}};
+const DAYS=['monday','tuesday','wednesday','thursday','friday'];
+const DAY_LABELS={monday:'Monday',tuesday:'Tuesday',wednesday:'Wednesday',thursday:'Thursday',friday:'Friday'};
+const GROUP_KEYS=['g0','g1','g2'];
+const GROUP_LABELS={g0:'Group 1',g1:'Group 2',g2:'Group 3'};
 
-  let pcs = {}, serverStatus = {}, isStarted = false, pcCounter = 0;
-  let dayFolderData = { monday:{g0:'',g1:'',g2:''}, tuesday:{g0:'',g1:'',g2:''}, wednesday:{g0:'',g1:'',g2:''}, thursday:{g0:'',g1:'',g2:''}, friday:{g0:'',g1:'',g2:''} };
+let pcs={},serverStatus={},isStarted=false,pcCounter=0;
+let dayFolderData={monday:{g0:'',g1:'',g2:''},tuesday:{g0:'',g1:'',g2:''},wednesday:{g0:'',g1:'',g2:''},thursday:{g0:'',g1:'',g2:''},friday:{g0:'',g1:'',g2:''}};
 
-  function switchTab(id, el) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
-    document.getElementById('tab-'+id).classList.add('active');
-  }
+function switchTab(id,el){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));el.classList.add('active');document.getElementById('tab-'+id).classList.add('active');}
+function getTodayKey(){return['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][new Date().getDay()];}
+function storeName(url){if(!url)return'—';try{return new URL(url).pathname.replace(/\/$/,'').split('/').pop();}catch{return url;}}
+function fmtTimer(ms){if(!ms)return'--:--';const r=Math.max(0,ms-Date.now());const m=Math.floor(r/60000);const s=Math.floor((r%60000)/1000);return m+':'+String(s).padStart(2,'0');}
+function timeSince(ms){const s=Math.floor((Date.now()-ms)/1000);return s<60?s+'s ago':Math.floor(s/60)+'m ago';}
 
-  function getTodayKey() { return ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][new Date().getDay()]; }
+// 15 minutes offline threshold
+const OFFLINE_MS = 15 * 60 * 1000;
 
-  function autoAssignTodayLinks() {
-    const today = getTodayKey();
-    if (!DAYS.includes(today)) return;
-    const todayData = dayFolderData[today];
-    let assigned = false;
-    for (const [pcId, pc] of Object.entries(pcs)) {
-      pc.groups.forEach((group, gIdx) => {
-        const links = todayData[GROUP_KEYS[gIdx]] || '';
-        if (links.trim()) { group.queue = links.split('\n').map(s=>s.trim()).filter(Boolean); group.autoSource = DAY_LABELS[today]+' / '+GROUP_LABELS[GROUP_KEYS[gIdx]]; assigned = true; }
-      });
-    }
-    if (assigned) { document.getElementById('autoAssignBar').style.display='flex'; document.getElementById('autoAssignText').textContent = 'Auto-assigned '+DAY_LABELS[today]+"'s links"; }
-  }
+function isRunning(st){ return st && st.running && (Date.now()-st.lastSeen < OFFLINE_MS); }
+function isOffline(st){ return !st || (!st.running && Date.now()-st.lastSeen > OFFLINE_MS) || Date.now()-st.lastSeen > OFFLINE_MS; }
 
-  function renderDayFolders() {
-    const container = document.getElementById('dayFolders');
-    container.innerHTML = '';
-    const today = getTodayKey();
-    DAYS.forEach(day => {
-      const isToday = day === today;
-      const div = document.createElement('div');
-      div.className = 'day-folder';
-      const subHTML = GROUP_KEYS.map(gk => `<div class="subgroup-label">${GROUP_LABELS[gk]}</div><textarea id="folder-${day}-${gk}" onchange="dayFolderData['${day}']['${gk}']=this.value">${(dayFolderData[day]&&dayFolderData[day][gk])||''}</textarea>`).join('');
-      div.innerHTML = `<div class="day-header${isToday?' open':''}" onclick="toggleDay('${day}',this)"><span>${DAY_LABELS[day]}${isToday?'<span class="today-tag">today</span>':''}</span><span class="arrow">▶</span></div><div class="day-body${isToday?' open':''}" id="day-${day}">${subHTML}</div>`;
-      container.appendChild(div);
+function autoAssignTodayLinks(){
+  const today=getTodayKey();if(!DAYS.includes(today))return;
+  const todayData=dayFolderData[today];let assigned=false;
+  for(const[pcId,pc]of Object.entries(pcs)){
+    pc.groups.forEach((group,gIdx)=>{
+      const links=todayData[GROUP_KEYS[gIdx]]||'';
+      if(links.trim()){group.queue=links.split('\n').map(s=>s.trim()).filter(Boolean);group.autoSource=DAY_LABELS[today]+' / '+GROUP_LABELS[GROUP_KEYS[gIdx]];assigned=true;}
     });
   }
+  if(assigned){document.getElementById('autoAssignBar').style.display='flex';document.getElementById('autoAssignText').textContent='Auto-assigned '+DAY_LABELS[today]+"'s links";}
+}
 
-  function toggleDay(day, h) { const b=document.getElementById('day-'+day); const o=b.classList.contains('open'); b.classList.toggle('open',!o); h.classList.toggle('open',!o); }
+function renderDayFolders(){
+  const container=document.getElementById('dayFolders');container.innerHTML='';
+  const today=getTodayKey();
+  DAYS.forEach(day=>{
+    const isToday=day===today;const div=document.createElement('div');div.className='day-folder';
+    const subHTML=GROUP_KEYS.map(gk=>`<div class="subgroup-label">${GROUP_LABELS[gk]}</div><textarea id="folder-${day}-${gk}" onchange="dayFolderData['${day}']['${gk}']=this.value">${(dayFolderData[day]&&dayFolderData[day][gk])||''}</textarea>`).join('');
+    div.innerHTML=`<div class="day-header${isToday?' open':''}" onclick="toggleDay('${day}',this)"><span>${DAY_LABELS[day]}${isToday?'<span class="today-tag">today</span>':''}</span><span class="arrow">▶</span></div><div class="day-body${isToday?' open':''}" id="day-${day}">${subHTML}</div>`;
+    container.appendChild(div);
+  });
+}
 
-  async function saveDayFolders() {
-    DAYS.forEach(day => GROUP_KEYS.forEach(gk => { const ta=document.getElementById('folder-'+day+'-'+gk); if(ta) dayFolderData[day][gk]=ta.value; }));
-    const res = await fetch('/api/dayfolders', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dayFolders:dayFolderData}) });
-    if ((await res.json()).ok) {
-      document.getElementById('folderSaveNote').textContent = '✓ Saved';
-      setTimeout(()=>document.getElementById('folderSaveNote').textContent='', 2000);
-      autoAssignTodayLinks(); renderPCList();
-    }
+function toggleDay(day,h){const b=document.getElementById('day-'+day);const o=b.classList.contains('open');b.classList.toggle('open',!o);h.classList.toggle('open',!o);}
+
+async function saveDayFolders(){
+  DAYS.forEach(day=>GROUP_KEYS.forEach(gk=>{const ta=document.getElementById('folder-'+day+'-'+gk);if(ta)dayFolderData[day][gk]=ta.value;}));
+  const res=await fetch('/api/dayfolders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dayFolders:dayFolderData})});
+  if((await res.json()).ok){document.getElementById('folderSaveNote').textContent='✓ Saved';setTimeout(()=>document.getElementById('folderSaveNote').textContent='',2000);autoAssignTodayLinks();renderPCList();}
+}
+
+function addPC(){pcCounter++;const id='pc'+pcCounter;pcs[id]={label:'PC '+pcCounter,groups:[{queue:[]}]};autoAssignTodayLinks();renderPCList();}
+function removePC(id){delete pcs[id];renderPCList();}
+function addGroup(pcId){pcs[pcId].groups.push({queue:[]});autoAssignTodayLinks();renderPCList();}
+function removeGroup(pcId,gIdx){pcs[pcId].groups.splice(gIdx,1);renderPCList();}
+
+function renderPCList(){
+  const container=document.getElementById('pcList');container.innerHTML='';
+  for(const[pcId,pc]of Object.entries(pcs)){
+    const block=document.createElement('div');block.className='pc-block';
+    block.innerHTML=`<div class="pc-header"><input class="pc-name-input" value="${pc.label}" onchange="pcs['${pcId}'].label=this.value"/><button class="btn-icon" onclick="removePC('${pcId}')">✕</button></div><div id="groups-${pcId}"></div><button class="btn-add-group" onclick="addGroup('${pcId}')">+ Add Group</button>`;
+    container.appendChild(block);
+    const groupsEl=document.getElementById('groups-'+pcId);
+    pc.groups.forEach((group,gIdx)=>{
+      const gBlock=document.createElement('div');gBlock.className='group-block';
+      const tag=group.autoSource?`<span class="source-tag">⚡ ${group.autoSource}</span>`:'';
+      gBlock.innerHTML=`<div class="group-header"><div><span class="group-label">Group ${gIdx+1}</span>${tag}</div><button class="btn-icon" style="font-size:11px" onclick="removeGroup('${pcId}',${gIdx})">✕</button></div><textarea onchange="updateQueue('${pcId}',${gIdx},this.value)">${group.queue.join('\n')}</textarea>`;
+      groupsEl.appendChild(gBlock);
+    });
   }
+}
 
-  function addPC() { pcCounter++; const id='pc'+pcCounter; pcs[id]={label:'PC '+pcCounter,groups:[{queue:[]}]}; autoAssignTodayLinks(); renderPCList(); }
-  function removePC(id) { delete pcs[id]; renderPCList(); }
-  function addGroup(pcId) { pcs[pcId].groups.push({queue:[]}); autoAssignTodayLinks(); renderPCList(); }
-  function removeGroup(pcId, gIdx) { pcs[pcId].groups.splice(gIdx,1); renderPCList(); }
+function updateQueue(pcId,gIdx,value){pcs[pcId].groups[gIdx].queue=value.split('\n').map(s=>s.trim()).filter(Boolean);pcs[pcId].groups[gIdx].autoSource=null;}
 
-  function renderPCList() {
-    const container = document.getElementById('pcList');
-    container.innerHTML = '';
-    for (const [pcId, pc] of Object.entries(pcs)) {
-      const block = document.createElement('div');
-      block.className = 'pc-block';
-      block.innerHTML = `<div class="pc-header"><input class="pc-name-input" value="${pc.label}" onchange="pcs['${pcId}'].label=this.value"/><button class="btn-icon" onclick="removePC('${pcId}')">✕</button></div><div id="groups-${pcId}"></div><button class="btn-add-group" onclick="addGroup('${pcId}')">+ Add Group</button>`;
-      container.appendChild(block);
-      const groupsEl = document.getElementById('groups-'+pcId);
-      pc.groups.forEach((group, gIdx) => {
-        const gBlock = document.createElement('div');
-        gBlock.className = 'group-block';
-        const tag = group.autoSource ? `<span class="source-tag">⚡ ${group.autoSource}</span>` : '';
-        gBlock.innerHTML = `<div class="group-header"><div><span class="group-label">Group ${gIdx+1}</span>${tag}</div><button class="btn-icon" style="font-size:11px" onclick="removeGroup('${pcId}',${gIdx})">✕</button></div><textarea onchange="updateQueue('${pcId}',${gIdx},this.value)">${group.queue.join('\n')}</textarea>`;
-        groupsEl.appendChild(gBlock);
-      });
-    }
+async function saveConfig(){
+  for(const[pcId,pc]of Object.entries(pcs)){
+    pc.groups.forEach((group,gIdx)=>{
+      const blocks=document.querySelectorAll('#groups-'+pcId+' .group-block');
+      if(blocks[gIdx]){const ta=blocks[gIdx].querySelector('textarea');if(ta)group.queue=ta.value.split('\n').map(s=>s.trim()).filter(Boolean);}
+    });
   }
+  const res=await fetch('/api/pcs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pcs})});
+  if((await res.json()).ok){document.getElementById('startBtn').disabled=false;document.getElementById('pcSaveNote').textContent='✓ Saved';setTimeout(()=>document.getElementById('pcSaveNote').textContent='',2000);document.getElementById('lastSaved').textContent='Saved '+new Date().toLocaleTimeString();}
+}
 
-  function updateQueue(pcId, gIdx, value) { pcs[pcId].groups[gIdx].queue=value.split('\n').map(s=>s.trim()).filter(Boolean); pcs[pcId].groups[gIdx].autoSource=null; }
+function toggleCustom(){document.getElementById('customDelays').className='custom-delays'+(document.getElementById('speedPreset').value==='custom'?' show':'');}
 
-  async function saveConfig() {
-    for (const [pcId, pc] of Object.entries(pcs)) {
-      pc.groups.forEach((group, gIdx) => {
-        const blocks = document.querySelectorAll('#groups-'+pcId+' .group-block');
-        if (blocks[gIdx]) { const ta=blocks[gIdx].querySelector('textarea'); if(ta) group.queue=ta.value.split('\n').map(s=>s.trim()).filter(Boolean); }
-      });
-    }
-    const res = await fetch('/api/pcs', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pcs}) });
-    if ((await res.json()).ok) {
-      document.getElementById('startBtn').disabled = false;
-      document.getElementById('pcSaveNote').textContent = '✓ Saved';
-      setTimeout(()=>document.getElementById('pcSaveNote').textContent='', 2000);
-      document.getElementById('lastSaved').textContent = 'Saved '+new Date().toLocaleTimeString();
-    }
+async function saveSettings(){
+  const preset=document.getElementById('speedPreset').value;
+  const pv=preset!=='custom'?PRESETS[preset]:{minDelay:parseFloat(document.getElementById('minDelay').value)*1000,maxDelay:parseFloat(document.getElementById('maxDelay').value)*1000,hesitationChance:parseInt(document.getElementById('hesitationChance').value),hesitationDuration:parseFloat(document.getElementById('hesitationDuration').value)*1000};
+  const settings={sessionMinutes:parseInt(document.getElementById('sessionMinutes').value),maxDays:parseInt(document.getElementById('maxDays').value),maxPosts:parseInt(document.getElementById('maxPosts').value),speedPreset:preset,...pv};
+  const res=await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(settings)});
+  if((await res.json()).ok){document.getElementById('settingsSaveNote').textContent='✓ Saved';setTimeout(()=>document.getElementById('settingsSaveNote').textContent='',2000);}
+}
+
+async function triggerNow(){if(!confirm('Trigger auto-start now?'))return;await fetch('/api/scheduler/trigger',{method:'POST'});isStarted=true;updateBadge();}
+document.getElementById('startBtn').onclick=async()=>{await fetch('/api/start',{method:'POST'});isStarted=true;updateBadge();};
+document.getElementById('stopBtn').onclick=async()=>{await fetch('/api/stop',{method:'POST'});isStarted=false;updateBadge();};
+
+function updateBadge(){
+  const b=document.getElementById('statusBadge');
+  b.textContent=isStarted?'● RUNNING':'● IDLE';
+  b.className='status-badge'+(isStarted?' on':'');
+  document.getElementById('startBtn').disabled=isStarted;
+  document.getElementById('stopBtn').disabled=!isStarted;
+}
+
+function renderStatus(){
+  const grid=document.getElementById('statusGrid');
+  if(!Object.keys(pcs).length){grid.innerHTML='<div style="color:#333;font-size:12px">No PCs configured.</div>';return;}
+  grid.innerHTML='';
+  for(const[pcId,pc]of Object.entries(pcs)){
+    const liveCount=pc.groups.filter((_,i)=>isRunning(serverStatus[`${pcId}-g${i}-a0`]||serverStatus[`${pcId}-g${i}-a1`]||serverStatus[`${pcId}-g${i}-a2`])).length;
+    const block=document.createElement('div');block.className='pc-status-block';
+    block.innerHTML=`<div class="pc-status-header"><span class="pc-status-name">${pc.label}</span><span class="pc-online-count">${liveCount}/${pc.groups.length} groups running</span></div><div id="srows-${pcId}"></div>`;
+    grid.appendChild(block);
+    const rowsEl=document.getElementById('srows-'+pcId);
+    pc.groups.forEach((group,gIdx)=>{
+      // Use first available account status for the group row
+      const st=serverStatus[`${pcId}-g${gIdx}-a0`]||serverStatus[`${pcId}-g${gIdx}-a1`]||serverStatus[`${pcId}-g${gIdx}-a2`];
+      const live=isRunning(st);
+      const row=document.createElement('div');row.className='group-status-row';
+      row.innerHTML=`<div class="gs-label">Group ${gIdx+1}</div><div class="gs-store ${live?'':'idle'}">${live?storeName(st.currentStore)+(st.totalStores>0?` (${(st.storeIndex||0)+1}/${st.totalStores})`:''):'—'}</div><div class="gs-listings">${live?(st.listingsProcessed||0)+' items':''}</div><div class="gs-conn"><span class="dot ${live?'live':''}"></span>${live?'Running':'Offline'}</div>`;
+      rowsEl.appendChild(row);
+    });
   }
+}
 
-  function toggleCustom() { document.getElementById('customDelays').className='custom-delays'+(document.getElementById('speedPreset').value==='custom'?' show':''); }
+function renderLiveLog(){
+  const container=document.getElementById('logContainer');
+  if(!Object.keys(pcs).length){container.innerHTML='<div style="color:#333;font-size:12px">No PCs configured.</div>';return;}
+  container.innerHTML='';
 
-  async function saveSettings() {
-    const preset = document.getElementById('speedPreset').value;
-    const pv = preset!=='custom' ? PRESETS[preset] : { minDelay:parseFloat(document.getElementById('minDelay').value)*1000, maxDelay:parseFloat(document.getElementById('maxDelay').value)*1000, hesitationChance:parseInt(document.getElementById('hesitationChance').value), hesitationDuration:parseFloat(document.getElementById('hesitationDuration').value)*1000 };
-    const settings = { sessionMinutes:parseInt(document.getElementById('sessionMinutes').value), maxDays:parseInt(document.getElementById('maxDays').value), maxPosts:parseInt(document.getElementById('maxPosts').value), speedPreset:preset, ...pv };
-    const res = await fetch('/api/settings', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(settings) });
-    if ((await res.json()).ok) { document.getElementById('settingsSaveNote').textContent='✓ Saved'; setTimeout(()=>document.getElementById('settingsSaveNote').textContent='',2000); }
-  }
+  for(const[pcId,pc]of Object.entries(pcs)){
+    const pcBlock=document.createElement('div');pcBlock.className='log-pc-block';
+    const totalAccounts=pc.groups.reduce((sum,_,i)=>{
+      return sum+[0,1,2].filter(a=>serverStatus[`${pcId}-g${i}-a${a}`]).length;
+    },0);
+    const runningAccounts=pc.groups.reduce((sum,_,i)=>{
+      return sum+[0,1,2].filter(a=>isRunning(serverStatus[`${pcId}-g${i}-a${a}`])).length;
+    },0);
 
-  async function triggerNow() {
-    if (!confirm("Trigger auto-start now?")) return;
-    await fetch('/api/scheduler/trigger', { method:'POST' });
-    isStarted = true; updateBadge();
-  }
+    pcBlock.innerHTML=`<div class="log-pc-title">${pc.label}<span class="log-pc-meta">${runningAccounts} running / ${totalAccounts} connected</span></div><div class="log-groups" id="log-${pcId}"></div>`;
+    container.appendChild(pcBlock);
 
-  document.getElementById('startBtn').onclick = async () => { await fetch('/api/start',{method:'POST'}); isStarted=true; updateBadge(); };
-  document.getElementById('stopBtn').onclick = async () => { await fetch('/api/stop',{method:'POST'}); isStarted=false; updateBadge(); };
+    const groupsEl=document.getElementById('log-'+pcId);
+    pc.groups.forEach((group,gIdx)=>{
+      const gCard=document.createElement('div');gCard.className='log-group-card';
+      const runningInGroup=[0,1,2].filter(a=>isRunning(serverStatus[`${pcId}-g${gIdx}-a${a}`])).length;
+      gCard.innerHTML=`<div class="log-group-title">Group ${gIdx+1}<span style="font-size:9px;color:#555">${runningInGroup}/3 running</span></div><div class="log-accounts" id="log-accts-${pcId}-${gIdx}"></div>`;
+      groupsEl.appendChild(gCard);
 
-  function updateBadge() {
-    const b = document.getElementById('statusBadge');
-    b.textContent = isStarted ? '● RUNNING' : '● IDLE';
-    b.className = 'status-badge'+(isStarted?' on':'');
-    document.getElementById('startBtn').disabled = isStarted;
-    document.getElementById('stopBtn').disabled = !isStarted;
-  }
+      const acctsEl=document.getElementById(`log-accts-${pcId}-${gIdx}`);
+      [0,1,2].forEach(aIdx=>{
+        const key=`${pcId}-g${gIdx}-a${aIdx}`;
+        const st=serverStatus[key];
+        const running=isRunning(st);
+        const offline=!st||(Date.now()-st.lastSeen>OFFLINE_MS);
 
-  function timeSince(ms) { const s=Math.floor((Date.now()-ms)/1000); return s<60?s+'s ago':Math.floor(s/60)+'m ago'; }
-  function fmtTime(ms) { if (!ms) return '--:--'; const r=Math.max(0,ms-Date.now()); const m=Math.floor(r/60000); const s=Math.floor((r%60000)/1000); return m+':'+String(s).padStart(2,'0'); }
-  function storeName(url) { if(!url) return '—'; try { return new URL(url).pathname.replace(/\/$/,'').split('/').pop(); } catch { return url; } }
-
-  function renderStatus() {
-    const grid = document.getElementById('statusGrid');
-    if (!Object.keys(pcs).length) { grid.innerHTML='<div style="color:#333;font-size:12px;">No PCs configured.</div>'; return; }
-    grid.innerHTML = '';
-    for (const [pcId, pc] of Object.entries(pcs)) {
-      const liveCount = pc.groups.filter((_,i)=>{ const s=serverStatus[pcId+'-g'+i]; return s&&s.running&&Date.now()-s.lastSeen<12000; }).length;
-      const connCount = pc.groups.filter((_,i)=>{ const s=serverStatus[pcId+'-g'+i]; return s&&Date.now()-s.lastSeen<20000; }).length;
-      const block = document.createElement('div');
-      block.className = 'pc-status-block';
-      block.innerHTML = `<div class="pc-status-header"><span class="pc-status-name">${pc.label}</span><span class="pc-online-count">${connCount}/${pc.groups.length} connected · ${liveCount} running</span></div><div id="srows-${pcId}"></div>`;
-      grid.appendChild(block);
-      const rowsEl = document.getElementById('srows-'+pcId);
-      pc.groups.forEach((group,gIdx) => {
-        const key=pcId+'-g'+gIdx; const st=serverStatus[key];
-        const isLive=st&&st.running&&Date.now()-st.lastSeen<12000;
-        const isConn=st&&Date.now()-st.lastSeen<20000;
-        const row=document.createElement('div'); row.className='group-status-row';
-        row.innerHTML=`<div class="gs-label">Group ${gIdx+1}</div><div class="gs-store ${isLive?'':'idle'}">${isLive?storeName(st.currentStore)+(st.totalStores>0?` (${(st.storeIndex||0)+1}/${st.totalStores})`:''):'—'}</div><div class="gs-listings">${isLive?(st.listingsProcessed||0)+' items':''}</div><div class="gs-conn"><span class="dot ${isLive?'live':isConn?'connected':''}"></span>${isLive?'Running':isConn?'Idle':'Offline'}</div>`;
-        rowsEl.appendChild(row);
-      });
-    }
-  }
-
-  function renderLiveLog() {
-    const grid = document.getElementById('logGrid');
-    if (!Object.keys(pcs).length) { grid.innerHTML='<div style="color:#333;font-size:12px;">No PCs configured.</div>'; return; }
-    grid.innerHTML = '';
-    for (const [pcId, pc] of Object.entries(pcs)) {
-      const card = document.createElement('div');
-      card.className = 'log-pc-card';
-      const totalGroups = pc.groups.length;
-      const liveGroups = pc.groups.filter((_,i)=>{ const s=serverStatus[pcId+'-g'+i]; return s&&s.running&&Date.now()-s.lastSeen<12000; }).length;
-      const connGroups = pc.groups.filter((_,i)=>{ const s=serverStatus[pcId+'-g'+i]; return s&&Date.now()-s.lastSeen<20000; }).length;
-      card.innerHTML = `<div class="log-pc-name">${pc.label}<span class="log-pc-badge">${connGroups}/${totalGroups} connected</span></div><div id="log-groups-${pcId}"></div>`;
-      grid.appendChild(card);
-      const groupsEl = document.getElementById('log-groups-'+pcId);
-      pc.groups.forEach((group, gIdx) => {
-        const key=pcId+'-g'+gIdx; const st=serverStatus[key];
-        const isLive=st&&st.running&&Date.now()-st.lastSeen<12000;
-        const isConn=st&&Date.now()-st.lastSeen<20000;
-        const connClass=isLive?'running':isConn?'idle':'offline';
-        const connLabel=isLive?'Running':isConn?'Idle':'Offline';
         const totalStores=st?st.totalStores||0:0;
         const storeIdx=st?st.storeIndex||0:0;
         const listings=st?st.listingsProcessed||0:0;
-        const progress=totalStores>0?Math.round(((storeIdx+(isLive?0.5:0))/totalStores)*100):0;
+        const progress=totalStores>0?Math.min(100,Math.round(((storeIdx+(running?0.5:1))/totalStores)*100)):0;
 
-        const gEl = document.createElement('div');
-        gEl.className = 'log-group';
-        gEl.innerHTML = `
-          <div class="log-group-header">
-            <span class="log-group-name">Group ${gIdx+1}</span>
-            <span class="log-conn-badge ${connClass}">${connLabel}</span>
+        const aEl=document.createElement('div');aEl.className='log-account';
+        aEl.innerHTML=`
+          <div class="log-acct-header">
+            <span class="log-acct-name">Account ${aIdx+1}</span>
+            <span class="log-running-badge ${running?'running':'offline'}">${running?'Running':'Offline'}</span>
           </div>
-          ${isLive ? `<div class="log-timer">${fmtTime(st.sessionEndTime)}</div>` : ''}
-          <div class="log-stat"><span>Store</span><span>${totalStores>0?(storeIdx+1)+' / '+totalStores:'—'}</span></div>
-          <div class="log-stat"><span>Listings processed</span><span>${listings}</span></div>
-          <div class="log-stat"><span>Last seen</span><span>${st?timeSince(st.lastSeen):'—'}</span></div>
-          <div class="log-store ${isLive?'active':'idle'}">${isLive?'▶ '+storeName(st.currentStore):'Not running'}</div>
-          ${totalStores>0?`<div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${progress}%"></div></div>`:''}
+          ${running?`<div class="log-timer">${fmtTimer(st.sessionEndTime)}</div>`:''}
+          <div class="log-store-name ${running?'active':''}">${running?'▶ '+storeName(st.currentStore):'—'}</div>
+          <div class="log-stats">
+            <span>Store ${totalStores>0?(storeIdx+1)+'/'+totalStores:'—'}</span>
+            <span>${listings} listings</span>
+            ${st?`<span>${timeSince(st.lastSeen)}</span>`:''}
+          </div>
+          <div class="progress-wrap"><div class="progress-fill" style="width:${progress}%"></div></div>
         `;
-        groupsEl.appendChild(gEl);
+        acctsEl.appendChild(aEl);
       });
-    }
-    document.getElementById('lastUpdated').textContent = 'Updated '+new Date().toLocaleTimeString();
+    });
   }
+  document.getElementById('lastUpdated').textContent='Updated '+new Date().toLocaleTimeString();
+}
 
-  function syncSettingsUI(s) {
-    if (!s) return;
-    document.getElementById('sessionMinutes').value = s.sessionMinutes||35;
-    document.getElementById('maxDays').value = s.maxDays||7;
-    document.getElementById('maxPosts').value = s.maxPosts||30;
-    document.getElementById('speedPreset').value = s.speedPreset||'balanced';
-    if (s.speedPreset==='custom') {
-      document.getElementById('minDelay').value=(s.minDelay||1500)/1000;
-      document.getElementById('maxDelay').value=(s.maxDelay||4000)/1000;
-      document.getElementById('hesitationChance').value=s.hesitationChance||25;
-      document.getElementById('hesitationDuration').value=(s.hesitationDuration||3000)/1000;
-    }
-    toggleCustom();
+function syncSettingsUI(s){
+  if(!s)return;
+  document.getElementById('sessionMinutes').value=s.sessionMinutes||35;
+  document.getElementById('maxDays').value=s.maxDays||7;
+  document.getElementById('maxPosts').value=s.maxPosts||30;
+  document.getElementById('speedPreset').value=s.speedPreset||'balanced';
+  if(s.speedPreset==='custom'){
+    document.getElementById('minDelay').value=(s.minDelay||1500)/1000;
+    document.getElementById('maxDelay').value=(s.maxDelay||4000)/1000;
+    document.getElementById('hesitationChance').value=s.hesitationChance||25;
+    document.getElementById('hesitationDuration').value=(s.hesitationDuration||3000)/1000;
   }
+  toggleCustom();
+}
 
-  let initialLoad = true;
-  async function poll() {
-    try {
-      const res = await fetch('/api/state');
-      const data = await res.json();
-      isStarted = data.started;
-      serverStatus = data.status||{};
-      if (initialLoad) {
-        if (Object.keys(data.pcs||{}).length) {
-          pcs = data.pcs;
-          const nums=Object.keys(pcs).map(k=>parseInt(k.replace('pc',''))).filter(n=>!isNaN(n));
-          pcCounter=nums.length?Math.max(...nums):0;
-        }
-        if (data.dayFolders) {
-          DAYS.forEach(day => {
-            if (data.dayFolders[day]) {
-              dayFolderData[day] = typeof data.dayFolders[day]==='string'
-                ? {g0:data.dayFolders[day],g1:'',g2:''}
-                : {g0:'',g1:'',g2:'',...data.dayFolders[day]};
-            }
-          });
-        }
-        renderDayFolders(); autoAssignTodayLinks(); renderPCList();
-        syncSettingsUI(data.settings);
-        if (Object.keys(pcs).length) document.getElementById('startBtn').disabled=false;
-        initialLoad = false;
+let initialLoad=true;
+async function poll(){
+  try{
+    const res=await fetch('/api/state');
+    const data=await res.json();
+    isStarted=data.started;serverStatus=data.status||{};
+    if(initialLoad){
+      if(Object.keys(data.pcs||{}).length){
+        pcs=data.pcs;
+        const nums=Object.keys(pcs).map(k=>parseInt(k.replace('pc',''))).filter(n=>!isNaN(n));
+        pcCounter=nums.length?Math.max(...nums):0;
       }
-      updateBadge(); renderStatus(); renderLiveLog();
-    } catch(e) {}
-  }
+      if(data.dayFolders){
+        DAYS.forEach(day=>{
+          if(data.dayFolders[day]){
+            dayFolderData[day]=typeof data.dayFolders[day]==='string'?{g0:data.dayFolders[day],g1:'',g2:''}:{g0:'',g1:'',g2:'',...data.dayFolders[day]};
+          }
+        });
+      }
+      renderDayFolders();autoAssignTodayLinks();renderPCList();
+      syncSettingsUI(data.settings);
+      if(Object.keys(pcs).length)document.getElementById('startBtn').disabled=false;
+      initialLoad=false;
+    }
+    updateBadge();renderStatus();renderLiveLog();
+  }catch(e){}
+}
 
-  poll();
-  setInterval(poll, 4000);
+poll();setInterval(poll,4000);
 </script>
 </body>
 </html>

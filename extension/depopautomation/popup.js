@@ -1,6 +1,5 @@
 const HIVEMIND_URL = 'https://riptag-hivemind-production.up.railway.app';
 
-// ── Setup: load PC list ──
 async function loadPCList() {
   try {
     const res = await fetch(`${HIVEMIND_URL}/api/pcs-list`);
@@ -32,14 +31,15 @@ document.getElementById('pcSelect').onchange = function() {
 document.getElementById('saveSetup').onclick = async () => {
   const pcId = document.getElementById('pcSelect').value;
   const groupIndex = document.getElementById('groupSelect').value;
+  const accountIndex = document.getElementById('accountSelect').value;
   if (!pcId) return;
-  await chrome.storage.local.set({ hivemindPC: pcId, hivemindGroup: groupIndex });
-  showStatus(pcId, groupIndex);
+  await chrome.storage.local.set({ hivemindPC: pcId, hivemindGroup: groupIndex, hivemindAccount: accountIndex });
+  showStatus(pcId, groupIndex, accountIndex);
 };
 
 document.getElementById('resetLink').onclick = (e) => {
   e.preventDefault();
-  chrome.storage.local.remove(['hivemindPC', 'hivemindGroup']);
+  chrome.storage.local.remove(['hivemindPC','hivemindGroup','hivemindAccount']);
   document.getElementById('setupSection').style.display = 'block';
   document.getElementById('statusSection').style.display = 'none';
 };
@@ -50,10 +50,10 @@ document.getElementById('localStop').onclick = () => {
   updateRunningUI(false);
 };
 
-function showStatus(pcId, groupIndex) {
+function showStatus(pcId, groupIndex, accountIndex) {
   document.getElementById('setupSection').style.display = 'none';
   document.getElementById('statusSection').style.display = 'block';
-  document.getElementById('identityLabel').textContent = `${pcId.toUpperCase()} / Group ${parseInt(groupIndex) + 1}`;
+  document.getElementById('identityLabel').textContent = `${pcId.toUpperCase()} / G${parseInt(groupIndex)+1} / Acct ${parseInt(accountIndex)+1}`;
 }
 
 function setConn(state, label) {
@@ -71,56 +71,40 @@ function updateRunningUI(running) {
   }
 }
 
-// ── Poll storage for display updates ──
-let timerInterval = null;
+setInterval(async () => {
+  const data = await chrome.storage.local.get(['running','sessionEndTime','currentStoreIndex','storeQueue','currentIndex','hivemindPC']);
+  if (!data.hivemindPC) return;
 
-function startPolling() {
-  timerInterval = setInterval(async () => {
-    const data = await chrome.storage.local.get(['running', 'sessionEndTime', 'currentStoreIndex', 'storeQueue', 'currentIndex', 'hivemindPC']);
+  const running = data.running;
+  setConn(running ? 'running' : 'offline', running ? '<b>Running</b>' : 'Offline');
+  updateRunningUI(running);
 
-    if (!data.hivemindPC) return;
+  const queue = data.storeQueue || [];
+  document.getElementById('queueCount').textContent = queue.length || '—';
 
-    const running = data.running;
-    setConn(running ? 'running' : 'synced', running ? '<b>Running</b>' : 'Synced');
-    updateRunningUI(running);
-
-    const queue = data.storeQueue || [];
-    document.getElementById('queueCount').textContent = queue.length || '—';
-
-    if (running) {
-      const idx = data.currentStoreIndex || 0;
-      document.getElementById('storeProgress').textContent = `Store ${idx + 1} of ${queue.length}`;
-
-      if (queue[idx]) {
-        try {
-          const name = new URL(queue[idx]).pathname.replace(/\/$/, '').split('/').pop();
-          document.getElementById('storeDisplay').textContent = '▶ ' + name;
-          document.getElementById('storeDisplay').className = 'store-name active';
-        } catch { document.getElementById('storeDisplay').textContent = queue[idx]; }
-      }
-
-      if (data.sessionEndTime) {
-        const r = Math.max(0, data.sessionEndTime - Date.now());
-        const m = Math.floor(r / 60000);
-        const s = Math.floor((r % 60000) / 1000);
-        document.getElementById('timerDisplay').textContent = `${m}:${String(s).padStart(2, '0')}`;
-      }
+  if (running) {
+    const idx = data.currentStoreIndex || 0;
+    document.getElementById('storeProgress').textContent = `Store ${idx+1} of ${queue.length}`;
+    if (queue[idx]) {
+      try { const name = new URL(queue[idx]).pathname.replace(/\/$/,'').split('/').pop(); document.getElementById('storeDisplay').textContent = '▶ '+name; document.getElementById('storeDisplay').className = 'store-name active'; }
+      catch { document.getElementById('storeDisplay').textContent = queue[idx]; }
     }
-  }, 1000);
-}
+    if (data.sessionEndTime) {
+      const r = Math.max(0, data.sessionEndTime - Date.now());
+      const m = Math.floor(r/60000); const s = Math.floor((r%60000)/1000);
+      document.getElementById('timerDisplay').textContent = `${m}:${String(s).padStart(2,'0')}`;
+    }
+  }
+}, 1000);
 
-// ── Init ──
 (async () => {
-  const saved = await chrome.storage.local.get(['hivemindPC', 'hivemindGroup', 'running', 'storeQueue']);
-
+  const saved = await chrome.storage.local.get(['hivemindPC','hivemindGroup','hivemindAccount','running','storeQueue']);
   if (saved.hivemindPC) {
-    showStatus(saved.hivemindPC, saved.hivemindGroup || 0);
-    document.getElementById('queueCount').textContent = (saved.storeQueue || []).length || '—';
+    showStatus(saved.hivemindPC, saved.hivemindGroup||0, saved.hivemindAccount||0);
+    document.getElementById('queueCount').textContent = (saved.storeQueue||[]).length||'—';
     if (saved.running) updateRunningUI(true);
-    setConn('synced', 'Syncing...');
+    setConn(saved.running?'running':'offline', saved.running?'<b>Running</b>':'Offline');
   } else {
     loadPCList();
   }
-
-  startPolling();
 })();

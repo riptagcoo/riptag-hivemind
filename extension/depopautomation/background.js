@@ -5,7 +5,6 @@ let onUpdatedListener = null;
 let lastQueueHash = '';
 let remoteStartFired = false;
 
-// ── Helpers ──
 function hashQueue(q) { return q.join('|'); }
 
 function removeOnUpdatedListener() {
@@ -15,16 +14,13 @@ function removeOnUpdatedListener() {
   }
 }
 
-async function cleanupTab(tabId) {
-  try {
-    await chrome.tabs.update(tabId, { url: 'about:blank' });
-    setTimeout(() => chrome.tabs.discard(tabId).catch(() => {}), 1500);
-  } catch(e) {}
+// Gentle cleanup — discard tab memory only, no navigation
+function cleanupTabMemory(tabId) {
+  setTimeout(() => chrome.tabs.discard(tabId).catch(() => {}), 3000);
 }
 
-// ── Report status to hivemind server ──
 async function reportStatus(running, currentStore) {
-  const saved = await chrome.storage.local.get(['hivemindPC', 'hivemindGroup', 'currentIndex', 'currentStoreIndex', 'storeQueue']);
+  const saved = await chrome.storage.local.get(['hivemindPC','hivemindGroup','hivemindAccount','currentIndex','currentStoreIndex','storeQueue','sessionEndTime']);
   if (!saved.hivemindPC) return;
   try {
     await fetch(`${HIVEMIND_URL}/api/status`, {
@@ -33,26 +29,25 @@ async function reportStatus(running, currentStore) {
       body: JSON.stringify({
         pcId: saved.hivemindPC,
         groupIndex: saved.hivemindGroup || 0,
+        accountIndex: saved.hivemindAccount || 0,
         running,
         currentStore,
         listingsProcessed: saved.currentIndex || 0,
         storeIndex: saved.currentStoreIndex || 0,
-        totalStores: (saved.storeQueue || []).length
+        totalStores: (saved.storeQueue || []).length,
+        sessionEndTime: saved.sessionEndTime || null
       })
     });
   } catch(e) {}
 }
 
-// ── Hivemind sync: runs every minute via alarm ──
 async function hivemindSync() {
-  const saved = await chrome.storage.local.get(['hivemindPC', 'hivemindGroup', 'running', 'storeQueue', 'currentStoreIndex']);
+  const saved = await chrome.storage.local.get(['hivemindPC','hivemindGroup','hivemindAccount','running','storeQueue','currentStoreIndex']);
   if (!saved.hivemindPC) return;
-
   try {
     const res = await fetch(`${HIVEMIND_URL}/api/queue/${saved.hivemindPC}/${saved.hivemindGroup || 0}`);
     const data = await res.json();
 
-    // ── Sync queue if changed and not running ──
     if (data.queue && data.queue.length > 0) {
       const newHash = hashQueue(data.queue);
       if (newHash !== lastQueueHash && !saved.running) {
@@ -61,7 +56,6 @@ async function hivemindSync() {
       }
     }
 
-    // ── Apply settings ──
     if (data.settings) {
       const PRESETS = {
         stealth:  { minDelay: 3000, maxDelay: 7000, hesitationChance: 40, hesitationDuration: 4000 },
@@ -79,15 +73,12 @@ async function hivemindSync() {
       });
     }
 
-    // ── Remote START ──
     if (data.started && !remoteStartFired && !saved.running) {
       remoteStartFired = true;
       const local = await chrome.storage.local.get(['storeQueue']);
-      const queue = local.storeQueue || [];
-      if (queue.length > 0) await triggerStart(queue);
+      if ((local.storeQueue || []).length > 0) await triggerStart(local.storeQueue);
     }
 
-    // ── Remote STOP ──
     if (!data.started && saved.running) {
       remoteStartFired = false;
       await triggerStop();
@@ -95,21 +86,14 @@ async function hivemindSync() {
 
     if (!data.started) remoteStartFired = false;
 
-    // ── Heartbeat while running ──
-    if (saved.running) {
-      const queue = saved.storeQueue || [];
-      reportStatus(true, queue[saved.currentStoreIndex || 0] || null);
-    }
+    const queue = saved.storeQueue || [];
+    reportStatus(saved.running || false, queue[saved.currentStoreIndex || 0] || null);
 
-  } catch(e) {
-    console.warn('[Hivemind] Sync failed:', e.message);
-  }
+  } catch(e) { console.warn('[Hivemind] Sync failed:', e.message); }
 }
 
-// ── Trigger start from background ──
 async function triggerStart(queue) {
   const local = await chrome.storage.local.get(['sessionMinutes','maxDays','maxPosts','minDelay','maxDelay','hesitationChance','hesitationDuration']);
-
   await chrome.storage.local.set({
     running: true, currentIndex: 0, currentStoreIndex: 0, storeQueue: queue,
     sessionMinutes: local.sessionMinutes || 35,
@@ -117,12 +101,9 @@ async function triggerStart(queue) {
     minDelay: local.minDelay || 1500, maxDelay: local.maxDelay || 4000,
     hesitationChance: local.hesitationChance || 25, hesitationDuration: local.hesitationDuration || 3000
   });
-
-  // Get active tab or find a Chrome window
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
   if (tabs[0]) {
     activeTabId = tabs[0].id;
-    // Close extra Depop tabs
     const depopTabs = await chrome.tabs.query({ url: '*://*.depop.com/*' });
     for (const tab of depopTabs) {
       if (tab.id !== activeTabId) chrome.tabs.remove(tab.id).catch(() => {});
@@ -132,7 +113,6 @@ async function triggerStart(queue) {
   }
 }
 
-// ── Trigger stop from background ──
 async function triggerStop() {
   chrome.alarms.clear('storeTimer');
   removeOnUpdatedListener();
@@ -141,7 +121,6 @@ async function triggerStop() {
   activeTabId = null;
 }
 
-// ── Navigate to store and start session ──
 async function startStore(tabId) {
   const data = await chrome.storage.local.get(['storeQueue','currentStoreIndex','sessionMinutes','running']);
   if (!data.running) return;
@@ -154,12 +133,11 @@ async function startStore(tabId) {
     chrome.runtime.sendMessage({ action: 'QUEUE_COMPLETE' }).catch(() => {});
     chrome.alarms.clear('storeTimer');
     reportStatus(false, null);
-    // Notify server queue is complete
-    const saved = await chrome.storage.local.get(['hivemindPC','hivemindGroup']);
+    const saved = await chrome.storage.local.get(['hivemindPC','hivemindGroup','hivemindAccount']);
     if (saved.hivemindPC) {
       fetch(`${HIVEMIND_URL}/api/complete`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pcId: saved.hivemindPC, groupIndex: saved.hivemindGroup || 0 })
+        body: JSON.stringify({ pcId: saved.hivemindPC, groupIndex: saved.hivemindGroup || 0, accountIndex: saved.hivemindAccount || 0 })
       }).catch(() => {});
     }
     return;
@@ -168,7 +146,6 @@ async function startStore(tabId) {
   const url = queue[idx];
   const sessionMs = (data.sessionMinutes || 10) * 60000;
   const sessionEndTime = Date.now() + sessionMs;
-
   await chrome.storage.local.set({ currentIndex: 0, sessionEndTime });
 
   removeOnUpdatedListener();
@@ -187,19 +164,17 @@ async function startStore(tabId) {
   chrome.alarms.create('storeTimer', { periodInMinutes: 5 / 60 });
 }
 
-// ── Switch to next store ──
 async function switchToNextStore() {
   const data = await chrome.storage.local.get(['currentStoreIndex','storeQueue','running']);
   if (!data.running) return;
   const nextIdx = (data.currentStoreIndex || 0) + 1;
   await chrome.storage.local.set({ currentStoreIndex: nextIdx });
   if (activeTabId) {
-    await cleanupTab(activeTabId);
-    setTimeout(() => startStore(activeTabId), 2000);
+    cleanupTabMemory(activeTabId);
+    await startStore(activeTabId);
   }
 }
 
-// ── Alarm handler ──
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === 'storeTimer') {
     const data = await chrome.storage.local.get(['running','sessionEndTime']);
@@ -209,12 +184,13 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
       await switchToNextStore();
     }
   }
-  if (alarm.name === 'hivemindSync') {
-    await hivemindSync();
+  if (alarm.name === 'hivemindSync') await hivemindSync();
+  if (alarm.name === 'heartbeat') {
+    const local = await chrome.storage.local.get(['running','storeQueue','currentStoreIndex']);
+    reportStatus(local.running || false, (local.storeQueue||[])[local.currentStoreIndex||0] || null);
   }
 });
 
-// ── Message handler ──
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'START_QUEUE') {
     chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
@@ -237,28 +213,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
   if (request.action === 'NEXT_STEP') {
     const tabId = sender.tab?.id;
-    if (tabId) {
-      chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] })
-        .catch(e => console.error('Re-inject error:', e));
-    }
+    if (tabId) chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] }).catch(() => {});
   }
   if (request.action === 'STORE_DONE') {
-    console.log('Store done — Smart Idle mode');
+    console.log('Store done — Smart Idle');
   }
   if (request.action === 'QUEUE_COMPLETE') {
     reportStatus(false, null);
   }
 });
 
-// ── Start hivemind sync alarm on install/startup ──
 chrome.runtime.onInstalled.addListener(() => {
   chrome.alarms.create('hivemindSync', { periodInMinutes: 1 });
-  console.log('[Hivemind] Background sync started');
+  chrome.alarms.create('heartbeat', { periodInMinutes: 0.05 }); // every 3 seconds
 });
 
 chrome.runtime.onStartup.addListener(() => {
   chrome.alarms.create('hivemindSync', { periodInMinutes: 1 });
+  chrome.alarms.create('heartbeat', { periodInMinutes: 0.05 });
 });
 
-// Also run sync immediately on service worker wake
 hivemindSync();
