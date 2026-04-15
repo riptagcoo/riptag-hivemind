@@ -121,6 +121,13 @@ app.post('/api/start', (req,res) => { runtime.started=true; runtime.startedAt=Da
 app.post('/api/stop', (req,res) => { runtime.started=false; res.json({ok:true}); });
 app.post('/api/scheduler/trigger', async (req,res) => { await autoAssignAndStart(); res.json({ok:true}); });
 
+app.post('/api/scheduler/skip', (req,res) => {
+  const {day} = getMountainTime();
+  lastScheduledDay = day;
+  console.log(`[Scheduler] Skipped for ${day}`);
+  res.json({ ok: true });
+});
+
 app.get('/api/queue/:pcId/:groupIndex', async (req,res) => {
   const {pcId,groupIndex}=req.params;
   const [pcs,settings]=await Promise.all([dbGet('pcs'),dbGet('settings')]);
