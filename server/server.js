@@ -46,8 +46,20 @@ async function autoAssignAndStart() {
   let assigned = false;
   for (const [pcId,pc] of Object.entries(pcs)) {
     pc.groups.forEach((group,gIdx) => {
-      const links = todayData[GROUP_KEYS[gIdx]]||'';
-      if (links.trim()) { group.queue=links.split('\n').map(s=>s.trim()).filter(Boolean); assigned=true; }
+      const groupData = todayData[GROUP_KEYS[gIdx]];
+      if (!groupData) return;
+      // Old format: plain string of URLs
+      if (typeof groupData === 'string') {
+        if (groupData.trim()) { group.queue=groupData.split('\n').map(s=>s.trim()).filter(Boolean); assigned=true; }
+      }
+      // New format: array of {url, pcIds} objects with per-PC selection
+      else if (Array.isArray(groupData)) {
+        const filtered = groupData
+          .filter(s => !s.pcIds || s.pcIds.length === 0 || s.pcIds.includes(pcId))
+          .map(s => s.url)
+          .filter(Boolean);
+        if (filtered.length) { group.queue = filtered; assigned = true; }
+      }
     });
   }
   if (!assigned) return;
