@@ -215,8 +215,16 @@ function autoAssignTodayLinks(){
   const todayData=dayFolderData[today];let assigned=false;
   for(const[pcId,pc]of Object.entries(pcs)){
     pc.groups.forEach((group,gIdx)=>{
-      const links=todayData[GROUP_KEYS[gIdx]]||'';
-      if(links.trim()){group.queue=links.split('\n').map(s=>s.trim()).filter(Boolean);group.autoSource=DAY_LABELS[today]+' / '+GROUP_LABELS[GROUP_KEYS[gIdx]];assigned=true;}
+      const groupData=todayData[GROUP_KEYS[gIdx]];
+      if(!groupData)return;
+      let urls=[];
+      if(typeof groupData==='string'){
+        urls=groupData.split('\n').map(s=>s.trim()).filter(Boolean);
+      } else if(Array.isArray(groupData)){
+        // Filter by PC selection
+        urls=groupData.filter(s=>!s.pcIds||s.pcIds.length===0||s.pcIds.includes(pcId)).map(s=>s.url).filter(Boolean);
+      }
+      if(urls.length){group.queue=urls;group.autoSource=DAY_LABELS[today]+' / '+GROUP_LABELS[GROUP_KEYS[gIdx]];assigned=true;}
     });
   }
   if(assigned){document.getElementById('autoAssignBar').style.display='flex';document.getElementById('autoAssignText').textContent='Auto-assigned '+DAY_LABELS[today]+"'s links";}
@@ -227,20 +235,88 @@ function renderDayFolders(){
   const today=getTodayKey();
   DAYS.forEach(day=>{
     const isToday=day===today;const div=document.createElement('div');div.className='day-folder';
-    const subHTML=GROUP_KEYS.map(gk=>`<div class="subgroup-label">${GROUP_LABELS[gk]}</div><textarea id="folder-${day}-${gk}" onchange="dayFolderData['${day}']['${gk}']=this.value">${(dayFolderData[day]&&dayFolderData[day][gk])||''}</textarea>`).join('');
+    const subHTML=GROUP_KEYS.map(gk=>{
+      const groupData=dayFolderData[day][gk];
+      const stores = Array.isArray(groupData) ? groupData : (groupData||'').split('\n').map(u=>u.trim()).filter(Boolean).map(u=>({url:u,pcIds:[]}));
+      const storeRows = stores.map((s,si)=>{
+        const pcCheckboxes = Object.entries(pcs).map(([pcId,pc])=>`
+          <label style="font-size:9px;color:#666;display:flex;align-items:center;gap:3px;margin-right:6px;cursor:pointer;">
+            <input type="checkbox" data-day="${day}" data-gk="${gk}" data-si="${si}" data-pcid="${pcId}"
+              ${(!s.pcIds||s.pcIds.length===0||s.pcIds.includes(pcId))?'checked':''}>
+            ${pc.label}
+          </label>`).join('');
+        return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;padding:4px 6px;background:#0a0a0a;border-radius:4px;">
+          <input type="text" value="${s.url}" placeholder="https://www.depop.com/store/"
+            style="flex:1;background:#141414;border:1px solid #222;color:#ccc;border-radius:4px;padding:4px 6px;font-size:10px;outline:none;font-family:monospace;"
+            onchange="updateStoreUrl('${day}','${gk}',${si},this.value)">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;">${pcCheckboxes}</div>
+          <button onclick="removeStore('${day}','${gk}',${si})" style="background:none;border:none;color:#444;cursor:pointer;font-size:12px;padding:2px 4px;">✕</button>
+        </div>`;
+      }).join('');
+      return `<div class="subgroup-label">${GROUP_LABELS[gk]}</div>
+        <div id="stores-${day}-${gk}">${storeRows}</div>
+        <button onclick="addStore('${day}','${gk}')" style="background:none;border:1px dashed #1e1e1e;color:#444;border-radius:4px;width:100%;padding:4px;font-size:10px;cursor:pointer;margin-bottom:6px;">+ Add Store</button>`;
+    }).join('');
     div.innerHTML=`<div class="day-header${isToday?' open':''}" onclick="toggleDay('${day}',this)"><span>${DAY_LABELS[day]}${isToday?'<span class="today-tag">today</span>':''}</span><span class="arrow">▶</span></div><div class="day-body${isToday?' open':''}" id="day-${day}">${subHTML}</div>`;
     container.appendChild(div);
   });
+  // Re-attach checkbox listeners
+  document.querySelectorAll('input[data-day]').forEach(cb=>{
+    cb.onchange=function(){
+      const {day,gk,si,pcid}=this.dataset;
+      const idx=parseInt(si);
+      ensureStoreFormat(day,gk);
+      const store=dayFolderData[day][gk][idx];
+      if(!store)return;
+      if(this.checked){if(!store.pcIds.includes(pcid))store.pcIds.push(pcid);}
+      else{store.pcIds=store.pcIds.filter(p=>p!==pcid);}
+    };
+  });
+}
+
+function ensureStoreFormat(day,gk){
+  const val=dayFolderData[day][gk];
+  if(typeof val==='string'){
+    dayFolderData[day][gk]=val.split('\n').map(u=>u.trim()).filter(Boolean).map(u=>({url:u,pcIds:[]}));
+  } else if(!Array.isArray(val)){
+    dayFolderData[day][gk]=[];
+  }
+}
+
+function addStore(day,gk){
+  ensureStoreFormat(day,gk);
+  dayFolderData[day][gk].push({url:'',pcIds:[]});
+  renderDayFolders();
+  // Re-open the day
+  const body=document.getElementById('day-'+day);
+  const header=body.previousElementSibling;
+  body.classList.add('open');header.classList.add('open');
+}
+
+function removeStore(day,gk,si){
+  ensureStoreFormat(day,gk);
+  dayFolderData[day][gk].splice(si,1);
+  renderDayFolders();
+  const body=document.getElementById('day-'+day);
+  const header=body.previousElementSibling;
+  body.classList.add('open');header.classList.add('open');
+}
+
+function updateStoreUrl(day,gk,si,url){
+  ensureStoreFormat(day,gk);
+  if(dayFolderData[day][gk][si])dayFolderData[day][gk][si].url=url;
 }
 
 function toggleDay(day,h){const b=document.getElementById('day-'+day);const o=b.classList.contains('open');b.classList.toggle('open',!o);h.classList.toggle('open',!o);}
 
 async function saveDayFolders(){
-  DAYS.forEach(day=>GROUP_KEYS.forEach(gk=>{const ta=document.getElementById('folder-'+day+'-'+gk);if(ta)dayFolderData[day][gk]=ta.value;}));
+  // Collect all current textarea/input values
+  DAYS.forEach(day=>GROUP_KEYS.forEach(gk=>{
+    ensureStoreFormat(day,gk);
+  }));
   const res=await fetch('/api/dayfolders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dayFolders:dayFolderData})});
   if((await res.json()).ok){document.getElementById('folderSaveNote').textContent='✓ Saved';setTimeout(()=>document.getElementById('folderSaveNote').textContent='',2000);autoAssignTodayLinks();renderPCList();}
 }
-
 function addPC(){pcCounter++;const id='pc'+pcCounter;pcs[id]={label:'PC '+pcCounter,groups:[{queue:[]}]};autoAssignTodayLinks();renderPCList();}
 function removePC(id){delete pcs[id];renderPCList();}
 function addGroup(pcId){pcs[pcId].groups.push({queue:[]});autoAssignTodayLinks();renderPCList();}
@@ -406,7 +482,9 @@ async function poll(){
       if(data.dayFolders){
         DAYS.forEach(day=>{
           if(data.dayFolders[day]){
-            dayFolderData[day]=typeof data.dayFolders[day]==='string'?{g0:data.dayFolders[day],g1:'',g2:''}:{g0:'',g1:'',g2:'',...data.dayFolders[day]};
+            const df=data.dayFolders[day];
+            if(typeof df==='string'){dayFolderData[day]={g0:df,g1:'',g2:''};}
+            else{dayFolderData[day]={g0:'',g1:'',g2:''};['g0','g1','g2'].forEach(gk=>{if(df[gk]!==undefined)dayFolderData[day][gk]=df[gk];});}
           }
         });
       }
