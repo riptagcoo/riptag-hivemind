@@ -119,6 +119,7 @@
   <div class="spacer"></div>
   <span class="sched-info">⏰ Auto 7PM MST</span>
   <button class="btn btn-dark btn-sm" onclick="triggerNow()">▶ Test Now</button>
+  <button class="btn btn-dark btn-sm" id="skipBtn" onclick="skipToday()" style="border-color:#cc4400;color:#cc4400;">⊘ Skip Today</button>
   <span style="font-size:10px;color:#333" id="lastSaved"></span>
 </div>
 <div class="tabs">
@@ -362,6 +363,7 @@ async function saveSettings(){
 }
 
 async function triggerNow(){if(!confirm('Trigger auto-start now?'))return;await fetch('/api/scheduler/trigger',{method:'POST'});isStarted=true;updateBadge();}
+async function skipToday(){if(!confirm('Skip the 7PM auto-start for today?'))return;const res=await fetch('/api/scheduler/skip',{method:'POST'});if((await res.json()).ok){const b=document.getElementById('skipBtn');b.textContent='⊘ Skipped';b.style.opacity='0.4';b.disabled=true;}}
 document.getElementById('startBtn').onclick=async()=>{await fetch('/api/start',{method:'POST'});isStarted=true;updateBadge();};
 document.getElementById('stopBtn').onclick=async()=>{await fetch('/api/stop',{method:'POST'});isStarted=false;updateBadge();};
 
