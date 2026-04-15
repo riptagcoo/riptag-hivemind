@@ -144,9 +144,9 @@ app.get('/api/pcs-list', async (req,res) => {
 
 // Status key now includes accountIndex: pc1-g0-a0
 app.post('/api/status', (req,res) => {
-  const {pcId,groupIndex,accountIndex,running,currentStore,listingsProcessed,storeIndex,totalStores,sessionEndTime}=req.body;
+  const {pcId,groupIndex,accountIndex,running,currentStore,listingsProcessed,storeIndex,totalStores,sessionEndTime,likesCount}=req.body;
   const key=`${pcId}-g${groupIndex}-a${accountIndex||0}`;
-  runtime.status[key]={running,currentStore,listingsProcessed,storeIndex,totalStores,sessionEndTime,lastSeen:Date.now()};
+  runtime.status[key]={running,currentStore,listingsProcessed,storeIndex,totalStores,sessionEndTime,likesCount:likesCount||0,lastSeen:Date.now()};
   res.json({ok:true});
 });
 
