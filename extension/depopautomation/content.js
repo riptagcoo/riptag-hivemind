@@ -139,7 +139,11 @@
                 if (!isFilled) {
                     console.log("Found empty heart, clicking button...");
                     await humanWait(1200);
-                    likeBtn.click();
+                    // Use proper MouseEvent dispatch for React compatibility
+                    likeBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
+                    await new Promise(res => setTimeout(res, 80));
+                    likeBtn.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
+                    likeBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
                     await humanWait(2000);
                 } else {
                     console.log("Item already liked. Skipping.");
