@@ -442,8 +442,12 @@ function renderLiveLog(){
           <div class="log-store-name ${running?'active':''}">${running?'▶ '+storeName(st.currentStore):'—'}</div>
           <div class="log-stats">
             <span>Store ${totalStores>0?(storeIdx+1)+'/'+totalStores:'—'}</span>
-            <span>${listings} listings</span>
+            <span>${listings} processed</span>
+            <span style="color:${(st&&st.likesCount>0)?'#22cc66':'#555'}">♥ ${st?st.likesCount||0:0} liked</span>
+          </div>
+          <div class="log-stats">
             ${st?`<span>${timeSince(st.lastSeen)}</span>`:''}
+            ${(st&&listings>0)?`<span style="color:${Math.round((st.likesCount||0)/listings*100)>50?'#22cc66':'#cc4400'}">${Math.round((st.likesCount||0)/listings*100)}% like rate</span>`:''}
           </div>
           <div class="progress-wrap"><div class="progress-fill" style="width:${progress}%"></div></div>
         `;
